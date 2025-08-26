@@ -1,123 +1,171 @@
-# 🚀 Smart Inventory Management System
+# 🚀 Inventory Management System
 
-A robust, full-stack application designed to streamline and automate inventory management for businesses of all sizes. This system provides secure user authentication, real-time inventory tracking, cloud-based image storage, and automated email notifications. Built with Node.js, Express, PostgreSQL, and React, it offers a modern, responsive interface and scalable backend architecture.
+Modern, full‑stack inventory management for retailers and distributors. This monorepo contains a Node.js/Express + PostgreSQL backend and a React + Vite frontend. It supports secure authentication, inventory and order workflows, image uploads to Cloudinary, and email notifications.
 
-## 📝 Project Description
+## ✨ Features
 
-The Smart Inventory Management System helps organizations efficiently manage their stock, track product movements, and optimize supply chain operations.
+- 🔐 Authentication and authorization (JWT)
+- 📦 Products, dealers, orders, payments CRUD
+- 🚨 Low‑stock thresholds and alerts
+- 🖼️ Image uploads via Cloudinary
+- ✉️ Email notifications (Nodemailer/Gmail SMTP)
+- 📊 Dashboard with charts and KPIs
+- 🧱 Opinionated project structure and reusable APIs
 
-**Key Features:**
-- 🔒 **User Authentication:** Secure login and role-based access for admins and users.
-- 📦 **Inventory Management:** Add, update, and delete items; monitor stock levels and receive alerts.
-- 🖼️ **Image Uploads:** Store product images securely using Cloudinary.
-- 📧 **Email Notifications:** Automated alerts for low stock, new orders, and other critical events.
-- 💻 **Responsive UI:** Intuitive interface for desktop and mobile users.
+## 🧰 Tech Stack
 
-### 🌟 Future Enhancements
+- **Backend:** Node.js, Express, PostgreSQL, JWT, Multer, Cloudinary SDK
+- **Frontend:** React 19, React Router, Vite, Tailwind CSS, Recharts
+- **Tooling:** ESLint, Nodemon
 
-We plan to integrate advanced AI and machine learning capabilities, including:
+## 📁 Repository Structure
 
-- 📈 **Sales Prediction:** Use machine learning models to forecast future sales trends and optimize inventory levels.
-- 🔢 **Logistic Regression:** Analyze historical data to predict product demand and improve supply chain decisions.
-- 🤖 **AI Chatbot:** Implement a smart chatbot (powered by GPT-like models) to assist users with queries, automate support, and provide insights directly within the application.
+```
+Inventory-Management-System/
+├─ backend/           # Express API, DB, migrations, seeders
+│  ├─ src/
+│  ├─ env.template    # Example backend environment
+│  └─ README.md       # Backend-specific docs and API
+├─ client/            # React app (Vite)
+│  ├─ src/
+│  ├─ env.sample      # Example frontend environment
+│  └─ public/
+└─ README.md          # You are here
+```
 
-These features will help businesses make data-driven decisions, reduce costs, and improve customer satisfaction.
+## ✅ Prerequisites
 
-## 🛠️ Tech Stack
+- Node.js 18+
+- PostgreSQL 13+
 
-- **Backend:** Node.js, Express, PostgreSQL
-- **Frontend:** React
-- **Cloud Storage:** Cloudinary
-- **Email Service:** Gmail SMTP
+## ⚙️ Environment Configuration
 
-## ⚡ Getting Started
+- Backend: copy `backend/env.template` to `backend/.env` and fill values
+- Frontend: copy `client/env.sample` to `client/.env` and fill values
 
-### ✅ Prerequisites
+Backend variables (high level; see `backend/env.template` for the canonical list):
 
-- Node.js (v18+ recommended)
-- PostgreSQL
-- npm or yarn
+```
+PGHOST=...
+PGPORT=5432
+PGDATABASE=...
+PGUSER=...
+PGPASSWORD=...
+PGSSLMODE=prefer
+PORT=4000
+NODE_ENV=development
+JWT_SECRET=...
+JWT_EXPIRES_IN=24h
+CORS_ORIGIN=http://localhost:5173
+ADMIN_PASSWORD=...
 
-### 📦 Installation
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/yourusername/inventory-management-system.git
-   cd inventory-management-system
-   ```
+EMAIL_USER=you@gmail.com
+EMAIL_PASS=your_app_password
+```
 
-2. **Install dependencies:**
-   - Backend:
-     ```sh
-     cd backend
-     npm install
-     ```
-   - Frontend:
-     ```sh
-     cd ../client
-     npm install
-     ```
+Frontend variables (see `client/env.sample`):
 
-3. **Configure environment variables:**
-   - Copy `.env.example` to `.env` in the `backend` folder and fill in your credentials.
-   - Example:
-     ```
-     PGHOST=your_postgres_host
-     PGPORT=5432
-     PGDATABASE=your_database
-     PGUSER=your_user
-     PGPASSWORD=your_password
-     PGSSLMODE=disable
-     PORT=4000
-     NODE_ENV=development
-     JWT_SECRET=your_jwt_secret
-     JWT_EXPIRES_IN=24h
-     CORS_ORIGIN=http://localhost:5173
-     ADMIN_PASSWORD=your_admin_password
+```
+VITE_API_BASE_URL=http://localhost:4000
+```
 
-     CLOUDINARY_CLOUD_NAME=your_cloud_name
-     CLOUDINARY_API_KEY=your_api_key
-     CLOUDINARY_API_SECRET=your_api_secret
+## 📦 Installation
 
-     EMAIL_USER=your_email@gmail.com
-     EMAIL_PASS=your_email_app_password
-     ```
+```bash
+git clone <your-repo-url>
+cd Inventory-Management-System
 
-### ▶️ Running the Application
+# Backend
+cd backend && npm install
 
-- **Backend:**
-  ```sh
-  cd backend
-  npm start
-  ```
-- **Frontend:**
-  ```sh
-  cd client
-  npm start
-  ```
+# Frontend
+cd ../client && npm install
+```
 
-Access the frontend at [http://localhost:5173](http://localhost:5173).
+## 🗄️ Database Setup
 
-## 🎯 Usage
+Run migrations and seed initial data from the backend directory:
 
-- Register or log in as an admin/user.
-- Add, update, or delete inventory items.
-- Upload item images (Cloudinary).
-- Receive email notifications for important actions.
+```bash
+cd backend
+npm run migrate
+npm run seed
+```
+
+This seeds an initial admin user; see `backend/README.md` for defaults and details.
+
+## ▶️ Running Locally
+
+- Backend (with reload):
+```bash
+cd backend
+npm run dev
+```
+
+- Frontend:
+```bash
+cd client
+npm run dev
+```
+
+App UI: `http://localhost:5173` (proxy to API configured via CORS)
+
+## 🧪 Useful Scripts
+
+- Backend
+  - `npm run dev` – start API with Nodemon
+  - `npm start` – start API
+  - `npm run migrate` – apply database schema
+  - `npm run migrate:images` – backfill product image metadata
+  - `npm run seed` – seed initial data
+- Frontend
+  - `npm run dev` – start Vite dev server
+  - `npm run build` – production build
+  - `npm run preview` – preview production build
+
+## 🔌 API Overview
+
+See `backend/README.md` for detailed routes. Examples:
+
+- Auth: `POST /api/auth/login`
+- Products: `GET/POST/PUT/DELETE /api/products`
+- Dealers: `GET/POST/PUT/DELETE /api/dealers`
+- Orders: `GET/POST/PUT/DELETE /api/orders`
+- Payments: `GET/POST /api/payments`
+
+All protected endpoints require `Authorization: Bearer <token>`.
+
+## 🧭 Architecture
+
+- Express server exposes REST endpoints and connects to PostgreSQL via `pg`.
+- Middleware handles auth, uploads, and logging.
+- Cloudinary stores images; metadata is persisted in DB.
+- React SPA consumes the API, with routes under `/src/pages` and shared UI under `/src/components`.
+
+## 📈 Monitoring & Logs
+
+- API logging via Morgan (dev format)
+- Frontend errors captured by `ErrorBoundary` in `client/src/components/ErrorBoundary.jsx`
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Open a pull request
+1. Create a feature branch: `git checkout -b feat/short-name`
+2. Commit with conventional messages
+3. Open a pull request
+
+## 🔐 Security
+
+- Never commit `.env` files; use the provided templates
+- Rotate `JWT_SECRET` and email app passwords periodically
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT
 
 ---
 
-**⚠️ Note:**  
-Do not commit sensitive information (like passwords or API keys) to the repository. Use `.env` files and keep them out of
+For backend setup details and full endpoint docs, see `backend/README.md`.
