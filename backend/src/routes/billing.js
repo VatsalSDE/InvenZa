@@ -24,7 +24,13 @@ router.post('/send-email', requireAuth, async (req, res) => {
     const { order_id, dealer_email, bill_data } = req.body;
     
     // Create email transporter
-    const transporter = createTransporter();
+    const transporter = createTransporter({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
     
     // Generate HTML bill content
     const billHTML = `
