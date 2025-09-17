@@ -5,15 +5,36 @@ import nodemailer from 'nodemailer';
 
 const router = Router();
 
-// Create email transporter
+// Create email transporter (supports Gmail service or custom SMTP via env)
 const createTransporter = () => {
-  // For development, you can use Gmail or other services
-  // You'll need to set up environment variables for production
+  const {
+    EMAIL_HOST,
+    EMAIL_PORT,
+    EMAIL_SECURE,
+    EMAIL_SERVICE,
+    EMAIL_USER,
+    EMAIL_PASS
+  } = process.env;
+
+  // Prefer custom SMTP if host is provided
+  if (EMAIL_HOST) {
+    return nodemailer.createTransport({
+      host: EMAIL_HOST,
+      port: EMAIL_PORT ? Number(EMAIL_PORT) : 587,
+      secure: (EMAIL_SECURE || '').toLowerCase() === 'true',
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS
+      }
+    });
+  }
+
+  // Fallback to nodemailer service (e.g., gmail, outlook)
   return nodemailer.createTransport({
-    service: 'gmail', // or 'outlook', 'yahoo', etc.
+    service: EMAIL_SERVICE || 'gmail',
     auth: {
-      user: process.env.EMAIL_USER || 'your-email@gmail.com',
-      pass: process.env.EMAIL_PASS || 'your-app-password'
+      user: EMAIL_USER,
+      pass: EMAIL_PASS
     }
   });
 };
@@ -22,15 +43,19 @@ const createTransporter = () => {
 router.post('/send-email', requireAuth, async (req, res) => {
   try {
     const { order_id, dealer_email, bill_data } = req.body;
+    if (!dealer_email || !dealer_email.includes('@')) {
+      return res.status(400).json({ success: false, message: 'Valid dealer_email is required' });
+    }
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      return res.status(500).json({
+        success: false,
+        message: 'Email is not configured. Please set EMAIL_USER and EMAIL_PASS in backend/.env'
+      });
+    }
     
     // Create email transporter
-    const transporter = createTransporter({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = createTransporter();
     
     // Generate HTML bill content
     const billHTML = `
@@ -115,7 +140,14 @@ router.post('/send-email', requireAuth, async (req, res) => {
       from: process.env.EMAIL_USER || 'noreply@vinayaklakshmi.com',
       to: dealer_email,
       subject: `Bill ${bill_data.billNumber} - Vinayak Lakshmi`,
-      html: billHTML
+      html: billHTML,
+      attachments: [
+        {
+          filename: `Bill-${bill_data.billNumber || order_id}.html`,
+          content: billHTML,
+          contentType: 'text/html'
+        }
+      ]
     };
     
     await transporter.sendMail(mailOptions);
@@ -132,7 +164,7 @@ router.post('/send-email', requireAuth, async (req, res) => {
     console.error('Email sending error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Failed to send email: ' + error.message
+      message: 'Failed to send email: ' + (error?.response?.toString() || error.message)
     });
   }
 });
