@@ -7,7 +7,7 @@ const router = Router();
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await query(`
-      SELECT o.*, d.firm_name
+      SELECT o.*, d.firm_name, COALESCE(o.bill_sent, false) AS bill_sent
       FROM orders o
       JOIN dealers d ON d.dealer_id = o.dealer_id
       ORDER BY o.created_at DESC

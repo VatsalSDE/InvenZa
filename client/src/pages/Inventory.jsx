@@ -19,6 +19,10 @@ import {
   FileText,
 } from "lucide-react";
 import { productsAPI } from "../services/api";
+import PageHeader from "../components/ims/PageHeader";
+import StatsCard from "../components/ims/StatsCard";
+import Button from "../components/ui/Button";
+import { Table as DataTable } from "../components/ui/Table";
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -182,106 +186,24 @@ const Inventory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-xl">
-              <Package className="w-8 h-8 text-white" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">
-                  {lowStockProducts}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Inventory Management
-            </h1>
-            <p className="text-gray-600 mt-2 text-lg">
-              Monitor and manage your product stock levels
-            </p>
-            <div className="mt-4">
-              <button
-                onClick={() => window.open('/catalogue.pdf', '_blank')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors shadow-lg"
-              >
-                <FileText className="w-4 h-4" />
-                View PDF Catalogue
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        icon={<Package className="w-8 h-8 text-white" />}
+        title="Inventory Management"
+        subtitle="Monitor and manage your product stock levels"
+        right={
+          <Button onClick={() => window.open('/catalogue.pdf', '_blank')} className="inline-flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            View PDF Catalogue
+          </Button>
+        }
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <Package className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full font-medium">
-              Total
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">
-            Total Products
-          </p>
-          <p className="text-3xl font-bold text-gray-900">{totalProducts}</p>
-          <p className="text-xs text-purple-600 mt-2">In inventory</p>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full font-medium">
-              Value
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">
-            Total Value
-          </p>
-          <p className="text-3xl font-bold text-gray-900">
-            ₹{(totalValue / 1000).toFixed(1)}K
-          </p>
-          <p className="text-xs text-pink-600 mt-2">Inventory worth</p>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <AlertTriangle className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xs bg-yellow-100 text-yellow-600 px-2 py-1 rounded-full font-medium">
-              Low Stock
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">
-            Low Stock Items
-          </p>
-          <p className="text-3xl font-bold text-gray-900">{lowStockProducts}</p>
-          <p className="text-xs text-yellow-600 mt-2">Need attention</p>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-white/50 hover:shadow-2xl transition-all duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <BarChart3 className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-medium">
-              Out of Stock
-            </span>
-          </div>
-          <p className="text-sm font-medium text-gray-600 mb-1">
-            Out of Stock
-          </p>
-          <p className="text-3xl font-bold text-gray-900">{outOfStockProducts}</p>
-          <p className="text-xs text-red-600 mt-2">Need restocking</p>
-        </div>
+        <StatsCard icon={<Package className="w-6 h-6" />} label="Total Products" value={totalProducts} badge="Total" />
+        <StatsCard icon={<TrendingUp className="w-6 h-6" />} label="Total Value" value={`₹${(totalValue / 1000).toFixed(1)}K`} badge="Value" />
+        <StatsCard icon={<AlertTriangle className="w-6 h-6" />} label="Low Stock Items" value={lowStockProducts} badge="Low Stock" />
+        <StatsCard icon={<Clock className="w-6 h-6" />} label="Out of Stock" value={outOfStockProducts} badge="Out of Stock" />
       </div>
 
       {/* Controls */}
@@ -386,79 +308,52 @@ const Inventory = () => {
       {viewMode === "table" ? (
         /* Table View */
         <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white">
-                <tr>
-                  <th className="px-6 py-4 text-left font-semibold">Product</th>
-                  <th className="px-6 py-4 text-left font-semibold">Category</th>
-                  <th className="px-6 py-4 text-left font-semibold">Price</th>
-                  <th className="px-6 py-4 text-left font-semibold">Quantity</th>
-                  <th className="px-6 py-4 text-left font-semibold">Stock Value</th>
-                  <th className="px-6 py-4 text-left font-semibold">Status</th>
-                  <th className="px-6 py-4 text-left font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product);
-                  const stockValue = (parseFloat(product.price || 0) * parseInt(product.quantity || 0)).toFixed(2);
-                  
-                  return (
-                    <tr key={product.product_id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center">
-                            <Package className="w-6 h-6 text-purple-600" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{product.product_name}</p>
-                            <p className="text-sm text-gray-500">{product.product_code}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium capitalize">
-                          {product.category || 'Uncategorized'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-gray-900">₹{parseFloat(product.price || 0).toLocaleString()}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-gray-900">{product.quantity || 0}</span>
-                          {product.min_stock_level && (
-                            <span className="text-xs text-gray-500">/ {product.min_stock_level}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-semibold text-gray-900">₹{stockValue}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${stockStatus.color}`}>
-                          {stockStatus.icon}
-                          {stockStatus.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          
+          <DataTable
+            columns={[
+              { key: 'product', header: 'Product', render: (p) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center">
+                    <Package className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{p.product_name}</p>
+                    <p className="text-sm text-gray-500">{p.product_code}</p>
+                  </div>
+                </div>
+              )},
+              { key: 'category', header: 'Category', render: (p) => (
+                <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium capitalize">
+                  {p.category || 'Uncategorized'}
+                </span>
+              )},
+              { key: 'price', header: 'Price', render: (p) => (
+                <p className="font-semibold text-gray-900">₹{parseFloat(p.price || 0).toLocaleString()}</p>
+              )},
+              { key: 'quantity', header: 'Quantity', render: (p) => (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-gray-900">{p.quantity || 0}</span>
+                  {p.min_stock_level && (
+                    <span className="text-xs text-gray-500">/ {p.min_stock_level}</span>
+                  )}
+                </div>
+              )},
+              { key: 'stock_value', header: 'Stock Value', render: (p) => (
+                <p className="font-semibold text-gray-900">₹{(parseFloat(p.price || 0) * parseInt(p.quantity || 0)).toFixed(2)}</p>
+              )},
+              { key: 'status', header: 'Status', render: (p) => {
+                const s = getStockStatus(p);
+                return (
+                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${s.color}`}>
+                    {s.icon}
+                    {s.status}
+                  </span>
+                );
+              }},
+            ]}
+            data={filteredProducts}
+            keyField="product_id"
+          />
+
           {filteredProducts.length === 0 && (
             <div className="text-center py-16">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />

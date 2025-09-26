@@ -53,6 +53,14 @@ const validatePaymentData = (data) => {
     sanitized.payment_method = data.payment_method;
   }
 
+  // Validate payment_status (Completed or Pending)
+  const allowedStatus = ['Completed', 'Pending'];
+  if (!data.payment_status || !allowedStatus.includes(data.payment_status)) {
+    sanitized.payment_status = 'Completed';
+  } else {
+    sanitized.payment_status = data.payment_status;
+  }
+
   // Generate transaction_id if not provided
   sanitized.transaction_id = data.reference_number || `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -85,6 +93,7 @@ router.get('/', requireAuth, async (req, res) => {
         p.method as payment_method,
         p.transaction_id,
         p.payment_date,
+        COALESCE(p.payment_status, 'Completed') as payment_status,
         d.firm_name as dealer_name,
         o.order_code
        FROM payments p
@@ -144,8 +153,9 @@ router.post('/', requireAuth, async (req, res) => {
         paid_amount, 
         method, 
         transaction_id, 
-        payment_date
-      ) VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_TIMESTAMP)) 
+        payment_date,
+        payment_status
+      ) VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_TIMESTAMP), $7) 
       RETURNING *
     `;
     
@@ -155,7 +165,8 @@ router.post('/', requireAuth, async (req, res) => {
       sanitized.paid_amount,
       sanitized.payment_method,
       sanitized.transaction_id,
-      sanitized.payment_date
+      sanitized.payment_date,
+      sanitized.payment_status
     ];
 
     console.log('📤 Executing SQL:', sql);
@@ -240,8 +251,9 @@ router.put('/:id', requireAuth, async (req, res) => {
           order_id = $2, 
           paid_amount = $3, 
           method = $4, 
-          payment_date = COALESCE($5, CURRENT_TIMESTAMP)
-      WHERE payment_id = $6 
+          payment_date = COALESCE($5, CURRENT_TIMESTAMP),
+          payment_status = $6
+      WHERE payment_id = $7 
       RETURNING *
     `;
     
@@ -251,6 +263,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       sanitized.paid_amount,
       sanitized.payment_method,
       sanitized.payment_date,
+      sanitized.payment_status,
       paymentId
     ];
 

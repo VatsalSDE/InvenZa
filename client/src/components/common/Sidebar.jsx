@@ -55,7 +55,8 @@ const Sidebar = ({ onClose }) => {
   <img
     src={logo}
     alt="Invenza Logo"
-    className="w-500 h-20 object-contain rounded-xl bg-white p-2"
+    className="w-500 h-20 object-contain rounded-xl bg-white p-2 cursor-pointer"
+    onClick={() => handleNavigation('/admin/dashboard')}
   />
 </div>
   </div>

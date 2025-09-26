@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import BillPreview from "../components/billing/BillPreview";
+import BillingActions from "../components/billing/BillingActions";
 import {
   Plus,
   Search,
@@ -36,30 +38,13 @@ const getOrderItems = async (orderId) => {
       return [];
     }
     
-    // First, let's check if we can get the order directly
-    const orderResponse = await fetch(`/api/orders/${orderId}`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
+    const items = await ordersAPI.getItems(orderId);
     
-    if (orderResponse.ok) {
-      const orderData = await orderResponse.json();
-      console.log('🔍 Order data:', orderData);
-    }
-    
-    const response = await fetch(`/api/orders/${orderId}/items`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    
-    if (response.ok) {
-      const items = await response.json();
+    if (Array.isArray(items)) {
       console.log('✅ Order items fetched:', items);
       
       // Validate the data structure
-      if (Array.isArray(items) && items.length > 0) {
+      if (items.length > 0) {
         items.forEach((item, index) => {
           console.log(`🔍 Item ${index + 1}:`, {
             product_id: item.product_id,
@@ -74,11 +59,10 @@ const getOrderItems = async (orderId) => {
       }
       
       return items;
-    } else {
-      const errorText = await response.text();
-      console.error('❌ Failed to fetch order items:', response.status, response.statusText, errorText);
-      return [];
     }
+    
+    console.warn('⚠️ Unexpected items response');
+    return [];
   } catch (error) {
     console.error('❌ Error fetching order items:', error);
     return [];
@@ -149,103 +133,7 @@ const generateBill = async (order, dealers, products) => {
   return billData;
 };
 
-// Bill Preview Component
-const BillPreview = ({ order, dealers, products }) => {
-  const [billData, setBillData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadBillData = async () => {
-      try {
-        const data = await generateBill(order, dealers, products);
-        setBillData(data);
-      } catch (error) {
-        console.error('Failed to generate bill:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadBillData();
-  }, [order, dealers, products]);
-
-  if (loading) {
-    return <div>Loading bill data...</div>;
-  }
-
-  if (!billData) {
-    return <div>Failed to load bill data</div>;
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Company Header */}
-      <div className="text-center border-b-2 border-gray-300 pb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">VINAYAK LAKSHMI</h1>
-        <p className="text-gray-600">Gas Stove Manufacturing & Distribution</p>
-        <p className="text-gray-600">Address: 123 Industrial Area, City - 123456</p>
-        <p className="text-gray-600">GST Number: 22AAAAA0000A1Z5</p>
-        <p className="text-gray-600">Mobile: +91 98765 43210</p>
-      </div>
-
-      {/* Bill Info */}
-      <div className="grid grid-cols-2 gap-8">
-        <div>
-          <h3 className="font-semibold text-gray-800 mb-2">Bill Information</h3>
-          <p><strong>Bill Number:</strong> {billData.billNumber}</p>
-          <p><strong>Bill Date:</strong> {billData.billDate}</p>
-          <p><strong>Order Code:</strong> {billData.order.order_code}</p>
-        </div>
-        <div>
-          <h3 className="font-semibold text-gray-800 mb-2">Dealer Information</h3>
-          <p><strong>Name:</strong> {billData.dealer.firm_name}</p>
-          <p><strong>Address:</strong> {billData.dealer.address}</p>
-          <p><strong>GST:</strong> {billData.dealer.gstin}</p>
-          <p><strong>Mobile:</strong> {billData.dealer.mobile_number}</p>
-        </div>
-      </div>
-
-      {/* Items Table */}
-      <div>
-        <h3 className="font-semibold text-gray-800 mb-3">Order Items</h3>
-        <table className="w-full border border-gray-300">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="border border-gray-300 px-4 py-2 text-left">Product</th>
-              <th className="border border-gray-300 px-4 py-2 text-left">Quantity</th>
-              <th className="border border-gray-300 px-4 py-2 text-left">Unit Price</th>
-              <th className="border border-gray-300 px-4 py-2 text-left">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {billData.items.map((item, index) => (
-              <tr key={index}>
-                <td className="border border-gray-300 px-4 py-2">
-                  {item.product?.product_name || 'Product'}
-                </td>
-                <td className="border border-gray-300 px-4 py-2">{item.quantity}</td>
-                <td className="border border-gray-300 px-4 py-2">₹{item.unit_price}</td>
-                <td className="border border-gray-300 px-4 py-2">₹{item.quantity * item.unit_price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Total */}
-      <div className="text-right">
-        <h3 className="text-xl font-bold text-gray-800">
-          Total Amount: ₹{billData.total.toLocaleString()}
-        </h3>
-      </div>
-
-      {/* Footer */}
-      <div className="text-center text-gray-600 border-t border-gray-300 pt-6">
-        <p>Thank you for your business!</p>
-        <p>For any queries, please contact us.</p>
-      </div>
-    </div>
-  );
-};
+// BillPreview moved to components/billing/BillPreview.jsx
 
 const Billing = () => {
   const [orders, setOrders] = useState([]);
@@ -414,7 +302,7 @@ const Billing = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
           order_id: order.order_id,
@@ -425,6 +313,10 @@ const Billing = () => {
 
       if (response.ok) {
         alert(`Bill sent successfully to ${dealer.email}`);
+        // Optimistically mark bill as sent in local state
+        setOrders(prev => prev.map(o =>
+          o.order_id === order.order_id ? { ...o, bill_sent: true } : o
+        ));
       } else {
         throw new Error('Failed to send email');
       }
@@ -730,6 +622,9 @@ const Billing = () => {
                     Status
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Bill Sent
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
             </tr>
@@ -772,6 +667,13 @@ const Billing = () => {
                         }`}>
                           {order.order_status}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          order.bill_sent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {order.bill_sent ? 'Yes' : 'No'}
+                        </span>
                 </td>
                 <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -845,29 +747,12 @@ const Billing = () => {
                 <BillPreview order={selectedOrder} dealers={dealers} products={products} />
               </div>
 
-              <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-                <button
-                  onClick={() => downloadBill(selectedOrder)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
-                <button
-                  onClick={() => printBill(selectedOrder)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
-                >
-                  <Printer className="w-4 h-4" />
-                  Print
-                </button>
-                <button
-                  onClick={() => sendBillEmail(selectedOrder)}
-                  className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2"
-                >
-                  <Mail className="w-4 h-4" />
-                  Send Email
-                </button>
-              </div>
+              <BillingActions
+                onDownload={() => downloadBill(selectedOrder)}
+                onPrint={() => printBill(selectedOrder)}
+                onSend={() => sendBillEmail(selectedOrder)}
+                disabled={sendingEmail}
+              />
             </div>
           </div>
         )}
@@ -875,5 +760,4 @@ const Billing = () => {
     </div>
   );
 };
-
 export default Billing;

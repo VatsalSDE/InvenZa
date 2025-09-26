@@ -12,6 +12,16 @@ Modern, full‑stack inventory management for retailers and distributors. This m
 - 📊 Dashboard with charts and KPIs
 - 🧱 Opinionated project structure and reusable APIs
 
+## 🚀 Recent Updates
+
+- 🧩 Refactored frontend to a component‑based architecture (smaller pages, shared UI)
+- 📨 Billing email flow repaired with proper auth token and Vite dev proxy
+- 🧾 Billing table shows "Bill Sent" status; backend persists `orders.bill_sent`
+- 🔄 Startup migration ensures `orders.bill_sent BOOLEAN DEFAULT false` exists
+- 🧭 Global header/topbar clean‑up; logo routes to dashboard
+- 🧮 Table/Grid view toggles added across Inventory, Dealers, Orders, Payments
+- 🧰 Lucide‑React icons replace emojis for consistent, professional UI
+
 ## 🧰 Tech Stack
 
 - **Backend:** Node.js, Express, PostgreSQL, JWT, Multer, Cloudinary SDK

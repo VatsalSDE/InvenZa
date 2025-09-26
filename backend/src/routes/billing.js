@@ -153,6 +153,15 @@ router.post('/send-email', requireAuth, async (req, res) => {
     await transporter.sendMail(mailOptions);
     
     console.log(`Bill email sent successfully to ${dealer_email} for order ${order_id}`);
+  // Mark order as bill_sent in database (adds column if missing)
+  try {
+    await query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS bill_sent BOOLEAN DEFAULT false');
+    if (order_id) {
+      await query('UPDATE orders SET bill_sent = true WHERE order_id = $1', [order_id]);
+    }
+  } catch (e) {
+    console.error('Failed to update bill_sent flag:', e);
+  }
     
     res.json({ 
       success: true, 

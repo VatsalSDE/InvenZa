@@ -4,6 +4,8 @@ import {
   TrendingUp, DollarSign, Calendar, Receipt, ShoppingCart, CreditCard, AlertCircle
 } from "lucide-react";
 import { dealersAPI, ordersAPI, paymentsAPI } from "../services/api";
+import { Table, Grid3X3 } from "lucide-react";
+import DealersTable from "../components/dealers/DealersTable";
 
 const Dealers = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -16,6 +18,7 @@ const Dealers = () => {
   const [loading, setLoading] = useState(true);
   const [editingDealer, setEditingDealer] = useState(null);
   const [selectedDealer, setSelectedDealer] = useState(null);
+  const [viewMode, setViewMode] = useState("grid");
   const [formData, setFormData] = useState({
     firm_name: "", person_name: "", address: "", mobile_number: "", email: "", gstin: ""
   });
@@ -247,7 +250,34 @@ const Dealers = () => {
         </div>
       </div>
 
-      {/* Dealers Grid */}
+      {/* View Controls */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 mb-6 flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          {filteredDealers.length} of {dealers.length} dealers
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode("table")}
+            className={`px-3 py-2 rounded-lg ${viewMode === 'table' ? 'bg-white text-cyan-600 shadow' : 'bg-gray-100 text-gray-600'}`}
+            title="Table view"
+          >
+            <Table className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`px-3 py-2 rounded-lg ${viewMode === 'grid' ? 'bg-white text-cyan-600 shadow' : 'bg-gray-100 text-gray-600'}`}
+            title="Grid view"
+          >
+            <Grid3X3 className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'table' ? (
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+          <DealersTable dealers={filteredDealers} calculateDealerBalance={calculateDealerBalance} formatCurrency={formatCurrency} />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {filteredDealers.map((dealer) => {
           const balance = calculateDealerBalance(dealer.dealer_id);
@@ -294,6 +324,7 @@ const Dealers = () => {
           );
         })}
       </div>
+      )}
 
       {/* Add Dealer Modal */}
       {showAddForm && (

@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import router from './routes/index.js';
+import { pool } from './db/pool.js';
 
 dotenv.config();
 
@@ -19,7 +20,13 @@ app.get('/api/health', (req, res) => {
 app.use('/api', router);
 
 const port = Number(process.env.PORT || 4000);
-app.listen(port, () => {
+app.listen(port, async () => {
+  try {
+    await pool.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS bill_sent BOOLEAN DEFAULT false');
+    await pool.query("ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_status TEXT CHECK (payment_status IN ('Completed','Pending')) DEFAULT 'Completed'");
+  } catch (e) {
+    console.error('Failed to ensure bill_sent column:', e);
+  }
   console.log(`Server listening on http://localhost:${port}`);
 });
 

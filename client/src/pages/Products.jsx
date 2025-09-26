@@ -15,6 +15,10 @@ import {
   FileText,
 } from "lucide-react";
 import { productsAPI } from "../services/api";
+import ProductForm from "../components/products/ProductForm";
+import ProductTable from "../components/products/ProductTable";
+import PageHeader from "../components/ims/PageHeader";
+import StatsCard from "../components/ims/StatsCard";
 
 const Products = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -364,102 +368,52 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-      {/* Enhanced Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-xl">
-              <Package className="w-8 h-8 text-white" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">
-                  {products.length}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 via-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              Products
-            </h1>
-            <p className="text-gray-600 mt-2 text-lg">
-              Manage your gas stove inventory with style
-            </p>
-            <div className="mt-4">
-              <button
-                onClick={() => window.open('/catalogue.pdf', '_blank')}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
-              >
-                <FileText className="w-4 h-4" />
-                View PDF Catalogue
-              </button>
-            </div>
-          </div>
-        </div>
+      <PageHeader
+        title="Products"
+        description="Manage your gas stove inventory with style"
+        icon={Package}
+        count={products.length}
+        action={
+          <button
+            onClick={() => window.open('/catalogue.pdf', '_blank')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
+          >
+            <FileText className="w-4 h-4" />
+            View PDF Catalogue
+          </button>
+        }
+      />
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <Package className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Products
-                </p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {products.length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">In Stock</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {products.filter((p) => p.quantity >= (p.min_stock_level || 10)).length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
-                <span className="text-white text-xl">⚠️</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Low Stock</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  {products.filter((p) => p.quantity < (p.min_stock_level || 10)).length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <span className="text-white text-xl">₹</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg. Price</p>
-                <p className="text-2xl font-bold text-gray-800">
-                  ₹
-                  {products.length > 0
-                    ? (
-                      products.reduce((sum, p) => sum + (Number(p.price) || 0), 0) / products.length
-                    ).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                    : '0.00'}
-                </p>
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Total Products"
+            value={products.length}
+            icon={Package}
+            color="blue"
+          />
+          <StatsCard
+            title="In Stock"
+            value={products.filter((p) => p.quantity >= (p.min_stock_level || 10)).length}
+            icon={TrendingUp}
+            color="green"
+          />
+          <StatsCard
+            title="Low Stock"
+            value={products.filter((p) => p.quantity < (p.min_stock_level || 10)).length}
+            icon="⚠️"
+            color="yellow"
+          />
+          <StatsCard
+            title="Avg. Price"
+            value={`₹${products.length > 0
+              ? (
+                products.reduce((sum, p) => sum + (Number(p.price) || 0), 0) / products.length
+              ).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : '0.00'}`}
+            icon="₹"
+            color="purple"
+          />
         </div>
-      </div>
-
       {/* Enhanced Controls */}
       <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-6 mb-8">
         <div className="flex flex-col lg:flex-row gap-4 items-center">
@@ -669,279 +623,19 @@ const Products = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              {/* Product Name */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-3">
-                  Product Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="product_name"
-                  value={formData.product_name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                  placeholder="Enter product name"
-                  required
-                />
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-3">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="flex items-center p-4 border border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="steel"
-                      checked={formData.category === "steel"}
-                      onChange={handleInputChange}
-                      className="mr-3 w-5 h-5 text-emerald-500"
-                    />
-                    <span className="text-lg font-medium">Steel</span>
-                  </label>
-                  <label className="flex items-center p-4 border border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="glass"
-                      checked={formData.category === "glass"}
-                      onChange={handleInputChange}
-                      className="mr-3 w-5 h-5 text-emerald-500"
-                    />
-                    <span className="text-lg font-medium">Glass</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Burners and Type */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Number of Burners <span className="text-red-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {["1", "2", "3", "4"].map((num) => (
-                      <label
-                        key={num}
-                        className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <input
-                          type="radio"
-                          name="no_burners"
-                          value={num}
-                          checked={formData.no_burners === num}
-                          onChange={handleInputChange}
-                          className="mr-2 w-4 h-4 text-emerald-500"
-                        />
-                        <span className="font-medium">{num}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Burner Type <span className="text-red-500">*</span>
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="type_burner"
-                        value="Brass"
-                        checked={formData.type_burner === "Brass"}
-                        onChange={handleInputChange}
-                        className="mr-3 w-4 h-4 text-emerald-500"
-                      />
-                      <span className="font-medium">Brass</span>
-                    </label>
-                    <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="type_burner"
-                        value="Alloy"
-                        checked={formData.type_burner === "Alloy"}
-                        onChange={handleInputChange}
-                        className="mr-3 w-4 h-4 text-emerald-500"
-                      />
-                      <span className="font-medium">Alloy</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price and Quantity */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Price (₹) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                    placeholder="0"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Quantity <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                    placeholder="0"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Low Stock Threshold
-                  </label>
-                  <input
-                    type="number"
-                    name="min_stock_level"
-                    value={formData.min_stock_level}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                    placeholder="10"
-                    min="1"
-                  />
-                </div>
-              </div>
-
-              {/* Image Upload */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-3">
-                  Product Image
-                </label>
-                <div className="space-y-4">
-                  {/* Image Preview */}
-                  {imagePreview && (
-                    <div className="relative">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-32 h-32 object-cover rounded-2xl border-2 border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImagePreview("");
-                          setImageFile(null);
-                        }}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Upload Area */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-emerald-400 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <label htmlFor="image-upload" className="cursor-pointer">
-                      <div className="space-y-4">
-                        {imagePreview ? (
-                          <Camera className="w-12 h-12 text-emerald-500 mx-auto" />
-                        ) : (
-                          <Upload className="w-12 h-12 text-gray-400 mx-auto" />
-                        )}
-                        <div>
-                          <p className="text-lg font-medium text-gray-700">
-                            {imagePreview ? "Change Image" : "Upload Product Image"}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {imagePreview ? "Click to select a different image" : "Click to browse or drag and drop"}
-                          </p>
-                        </div>
-                        {!imagePreview && (
-                          <p className="text-xs text-gray-400">
-                            PNG, JPG, GIF up to 10MB
-                          </p>
-                        )}
-                      </div>
-                    </label>
-                  </div>
-
-                  {/* Fallback URL Input */}
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-2">Or use an image URL:</p>
-                    <input
-                      type="url"
-                      name="image_url"
-                      value={formData.image_url}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent"
-                      placeholder="https://example.com/image.jpg"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Generated Product Code */}
-              {formData.product_name && (
-                <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-200">
-                  <label className="block text-lg font-semibold text-emerald-700 mb-2">
-                    Generated Product Code
-                  </label>
-                  <div className="text-2xl font-bold text-emerald-600 font-mono">
-                    {generateProductCode(
-                      formData.product_name,
-                      formData.category,
-                      formData.no_burners,
-                      formData.type_burner,
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Submit Buttons */}
-              <div className="flex gap-4 pt-6 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    resetForm();
-                  }}
-                  className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl hover:from-emerald-600 hover:to-teal-600 transition-colors shadow-lg text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {uploading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Uploading...
-                    </>
-                  ) : (
-                    "Create Product"
-                  )}
-                </button>
-              </div>
-            </form>
+            <ProductForm
+              formData={formData}
+              formErrors={formErrors}
+              imageFile={imageFile}
+              imagePreview={imagePreview}
+              uploading={uploading}
+              onInputChange={handleInputChange}
+              onImageChange={handleImageUpload}
+              onImageUpload={handleImageUpload}
+              onCancel={() => { setShowAddForm(false); resetForm(); }}
+              onSubmit={handleSubmit}
+              submitLabel="Create Product"
+            />
           </div>
         </div>
       )}
@@ -971,280 +665,19 @@ const Products = () => {
               </button>
             </div>
 
-            <form onSubmit={handleUpdate} className="p-8 space-y-6">
-              {/* Product Name */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-3">
-                  Product Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="product_name"
-                  value={formData.product_name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                  placeholder="Enter product name"
-                  required
-                />
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-3">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="flex items-center p-4 border border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="steel"
-                      checked={formData.category === "steel"}
-                      onChange={handleInputChange}
-                      className="mr-3 w-5 h-5 text-emerald-500"
-                    />
-                    <span className="text-lg font-medium">Steel</span>
-                  </label>
-                  <label className="flex items-center p-4 border border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="glass"
-                      checked={formData.category === "glass"}
-                      onChange={handleInputChange}
-                      className="mr-3 w-5 h-5 text-emerald-500"
-                    />
-                    <span className="text-lg font-medium">Glass</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Burners and Type */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Number of Burners <span className="text-red-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {["1", "2", "3", "4"].map((num) => (
-                      <label
-                        key={num}
-                        className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <input
-                          type="radio"
-                          name="no_burners"
-                          value={num}
-                          checked={formData.no_burners === num}
-                          onChange={handleInputChange}
-                          className="mr-2 w-4 h-4 text-emerald-500"
-                        />
-                        <span className="text-xs font-medium">{num}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Burner Type <span className="text-red-500">*</span>
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="type_burner"
-                        value="Brass"
-                        checked={formData.type_burner === "Brass"}
-                        onChange={handleInputChange}
-                        className="mr-3 w-4 h-4 text-emerald-500"
-                      />
-                      <span className="font-medium">Brass</span>
-                    </label>
-                    <label className="flex items-center p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
-                      <input
-                        type="radio"
-                        name="type_burner"
-                        value="Alloy"
-                        checked={formData.type_burner === "Alloy"}
-                        onChange={handleInputChange}
-                        className="mr-3 w-4 h-4 text-emerald-500"
-                      />
-                      <span className="font-medium">Alloy</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price and Quantity */}
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Price (₹) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                    placeholder="0"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Quantity <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                    placeholder="0"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Low Stock Threshold
-                  </label>
-                  <input
-                    type="number"
-                    name="min_stock_level"
-                    value={formData.min_stock_level}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent text-lg"
-                    placeholder="10"
-                    min="1"
-                  />
-                </div>
-              </div>
-
-              {/* Image Upload */}
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-3">
-                  Product Image
-                </label>
-                <div className="space-y-4">
-                  {/* Image Preview */}
-                  {imagePreview && (
-                    <div className="relative">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-32 h-32 object-cover rounded-2xl border-2 border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImagePreview("");
-                          setImageFile(null);
-                        }}
-                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Upload Area */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center hover:border-blue-400 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload-edit"
-                    />
-                    <label htmlFor="image-upload-edit" className="cursor-pointer">
-                      <div className="space-y-4">
-                        {imagePreview ? (
-                          <Camera className="w-12 h-12 text-blue-500 mx-auto" />
-                        ) : (
-                          <Upload className="w-12 h-12 text-gray-400 mx-auto" />
-                        )}
-                        <div>
-                          <p className="text-lg font-medium text-gray-700">
-                            {imagePreview ? "Change Image" : "Upload Product Image"}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {imagePreview ? "Click to select a different image" : "Click to browse or drag and drop"}
-                          </p>
-                        </div>
-                        {!imagePreview && (
-                          <p className="text-xs text-gray-400">
-                            PNG, JPG, GIF up to 10MB
-                          </p>
-                        )}
-                      </div>
-                    </label>
-                  </div>
-
-                  {/* Fallback URL Input */}
-                  <div className="text-center">
-                    <p className="text-sm text-gray-500 mb-2">Or use an image URL:</p>
-                    <input
-                      type="url"
-                      name="image_url"
-                      value={formData.image_url}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
-                      placeholder="https://example.com/image.jpg"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Generated Product Code */}
-              {formData.product_name && (
-                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200">
-                  <label className="block text-lg font-semibold text-blue-700 mb-2">
-                    Generated Product Code
-                  </label>
-                  <div className="text-2xl font-bold text-blue-600 font-mono">
-                    {generateProductCode(
-                      formData.product_name,
-                      formData.category,
-                      formData.no_burners,
-                      formData.type_burner,
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Submit Buttons */}
-              <div className="flex gap-4 pt-6 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditForm(false);
-                    setEditingProduct(null);
-                    resetForm();
-                  }}
-                  className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-colors shadow-lg text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {uploading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Uploading...
-                    </>
-                  ) : (
-                    "Update Product"
-                  )}
-                </button>
-              </div>
-            </form>
+            <ProductForm
+              formData={formData}
+              formErrors={formErrors}
+              imageFile={imageFile}
+              imagePreview={imagePreview}
+              uploading={uploading}
+              onInputChange={handleInputChange}
+              onImageChange={handleImageUpload}
+              onImageUpload={handleImageUpload}
+              onCancel={() => { setShowEditForm(false); setEditingProduct(null); resetForm(); }}
+              onSubmit={handleUpdate}
+              submitLabel="Update Product"
+            />
           </div>
         </div>
       )}

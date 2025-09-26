@@ -16,8 +16,13 @@ import {
   Banknote,
   Wallet,
   IndianRupee,
+  Table,
+  Grid3X3,
 } from "lucide-react";
 import { paymentsAPI, ordersAPI, dealersAPI } from "../services/api";
+import PageHeader from "../components/ims/PageHeader";
+import PaymentsTable from "../components/payments/PaymentsTable";
+import PaymentForm from "../components/payments/PaymentForm";
 
 const Payments = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -30,6 +35,7 @@ const Payments = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
 
   const [formData, setFormData] = useState({
     order_id: "",
@@ -207,8 +213,8 @@ const Payments = () => {
 
   const totalPayments = payments.length;
   const totalAmount = payments.reduce((sum, p) => sum + parseFloat(p.paid_amount || 0), 0);
-  const completedPayments = payments.filter(p => p.payment_status === 'Completed').length;
-  const pendingPayments = payments.filter(p => p.payment_status === 'Pending').length;
+  const completedPayments = payments.filter(p => (p.payment_status || 'Completed') === 'Completed').length;
+  const pendingPayments = payments.filter(p => (p.payment_status || 'Completed') === 'Pending').length;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -271,29 +277,7 @@ const Payments = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl">
-              <IndianRupee className="w-8 h-8 text-white" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">
-                  {completedPayments}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 via-green-600 to-emerald-600 bg-clip-text text-transparent">
-              Payments Management
-            </h1>
-            <p className="text-gray-600 mt-2 text-lg">
-              Track and manage all payment transactions
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<IndianRupee className="w-8 h-8 text-white" />} title="Payments Management" subtitle="Track and manage all payment transactions" />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
@@ -387,8 +371,6 @@ const Payments = () => {
               <option value="all">All Payments</option>
               <option value="completed">Completed</option>
               <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-              <option value="processing">Processing</option>
             </select>
 
             <button
@@ -402,7 +384,34 @@ const Payments = () => {
         </div>
       </div>
 
-      {/* Payments Grid */}
+      {/* View Controls */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 mb-6 flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          {filteredPayments.length} of {payments.length} payments
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-3 py-2 rounded-lg ${viewMode === 'table' ? 'bg-white text-green-600 shadow' : 'bg-gray-100 text-gray-600'}`}
+            title="Table view"
+          >
+            <Table className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-3 py-2 rounded-lg ${viewMode === 'grid' ? 'bg-white text-green-600 shadow' : 'bg-gray-100 text-gray-600'}`}
+            title="Grid view"
+          >
+            <Grid3X3 className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'table' ? (
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+          <PaymentsTable payments={filteredPayments} />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {filteredPayments.map((payment) => (
           <div
@@ -510,6 +519,7 @@ const Payments = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* No Results */}
       {filteredPayments.length === 0 && (
@@ -549,147 +559,14 @@ const Payments = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Order ID
-                  </label>
-                  <select
-                    name="order_id"
-                    value={formData.order_id}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent text-lg"
-                  >
-                    <option value="">Select Order (Optional)</option>
-                    {orders.map(order => (
-                      <option key={order.order_id} value={order.order_id}>
-                        {order.order_code} - ₹{parseFloat(order.total_amount || 0).toLocaleString()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Dealer <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="dealer_id"
-                    value={formData.dealer_id}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent text-lg"
-                    required
-                  >
-                    <option value="">Select Dealer</option>
-                    {dealers.map(dealer => (
-                      <option key={dealer.dealer_id} value={dealer.dealer_id}>
-                        {dealer.firm_name} - {dealer.person_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Payment Method <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="payment_method"
-                    value={formData.payment_method}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent text-lg"
-                    required
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
-                    <option value="UPI">UPI</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cheque">Cheque</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Amount <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="paid_amount"
-                    value={formData.paid_amount}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent text-lg"
-                    placeholder="0.00"
-                    step="0.01"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Payment Date
-                  </label>
-                  <input
-                    type="date"
-                    name="payment_date"
-                    value={formData.payment_date}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent text-lg"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Reference Number
-                  </label>
-                  <input
-                    type="text"
-                    name="reference_number"
-                    value={formData.reference_number}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent text-lg"
-                    placeholder="Leave empty for auto-generation"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-lg font-semibold text-gray-700 mb-3">
-                  Notes
-                </label>
-                <input
-                  type="text"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-transparent text-lg"
-                  placeholder="Additional notes (optional)"
-                />
-              </div>
-
-              <div className="flex gap-4 pt-6 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    resetForm();
-                  }}
-                  className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-colors shadow-lg text-lg font-semibold"
-                >
-                  Add Payment
-                </button>
-              </div>
-            </form>
+            <PaymentForm
+              formData={formData}
+              orders={orders}
+              onInputChange={handleInputChange}
+              onCancel={() => { setShowAddForm(false); resetForm(); }}
+              onSubmit={handleSubmit}
+              submitLabel="Add Payment"
+            />
           </div>
         </div>
       )}
@@ -719,167 +596,14 @@ const Payments = () => {
               </div>
             </div>
 
-            <form onSubmit={handleUpdate} className="p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Order ID
-                  </label>
-                  <select
-                    name="order_id"
-                    value={formData.order_id}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                  >
-                    <option value="">Select Order (Optional)</option>
-                    {orders.map(order => (
-                      <option key={order.order_id} value={order.order_id}>
-                        {order.order_code} - ₹{parseFloat(order.total_amount || 0).toLocaleString()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Dealer <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="dealer_id"
-                    value={formData.dealer_id}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                    required
-                  >
-                    <option value="">Select Dealer</option>
-                    {dealers.map(dealer => (
-                      <option key={dealer.dealer_id} value={dealer.dealer_id}>
-                        {dealer.firm_name} - {dealer.person_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Payment Method <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="payment_method"
-                    value={formData.payment_method}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                    required
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Card">Card</option>
-                    <option value="UPI">UPI</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cheque">Cheque</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Payment Status
-                  </label>
-                  <select
-                    name="payment_status"
-                    value={formData.payment_status}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                  >
-                    <option value="Completed">Completed</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Processing">Processing</option>
-                    <option value="Failed">Failed</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Amount <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="paid_amount"
-                    value={formData.paid_amount}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                    placeholder="0.00"
-                    step="0.01"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Payment Date
-                  </label>
-                  <input
-                    type="date"
-                    name="payment_date"
-                    value={formData.payment_date}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Reference Number
-                  </label>
-                  <input
-                    type="text"
-                    name="reference_number"
-                    value={formData.reference_number}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                    placeholder="Reference number"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Notes
-                  </label>
-                  <input
-                    type="text"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                    placeholder="Additional notes (optional)"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-6 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditForm(false);
-                    setEditingPayment(null);
-                    resetForm();
-                  }}
-                  className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-colors shadow-lg text-lg font-semibold"
-                >
-                  Update Payment
-                </button>
-              </div>
-            </form>
+            <PaymentForm
+              formData={formData}
+              orders={orders}
+              onInputChange={handleInputChange}
+              onCancel={() => { setShowEditForm(false); setEditingPayment(null); resetForm(); }}
+              onSubmit={handleUpdate}
+              submitLabel="Update Payment"
+            />
           </div>
         </div>
       )}

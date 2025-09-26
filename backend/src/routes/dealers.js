@@ -30,9 +30,9 @@ router.post('/', requireAuth, async (req, res) => {
 router.put('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { dealer_code, firm_name, person_name, gstin, mobile_number, email, address } = req.body;
-    const sql = `UPDATE dealers SET dealer_code=$1, firm_name=$2, person_name=$3, gstin=$4, mobile_number=$5, email=$6, address=$7 WHERE dealer_id=$8 RETURNING *`;
-    const params = [dealer_code, firm_name, person_name, gstin, mobile_number, email, address, id];
+    const { firm_name, person_name, gstin, mobile_number, email, address } = req.body;
+    const sql = `UPDATE dealers SET firm_name=$1, person_name=$2, gstin=$3, mobile_number=$4, email=$5, address=$6 WHERE dealer_id=$7 RETURNING *`;
+    const params = [firm_name, person_name, gstin, mobile_number, email, address, id];
     const { rows } = await query(sql, params);
     res.json(rows[0]);
   } catch (e) {

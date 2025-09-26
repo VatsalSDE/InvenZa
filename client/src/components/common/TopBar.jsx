@@ -4,8 +4,6 @@ import {
   LogOut,
   Bell,
   Menu,
-  Search,
-  Settings,
   User,
   ChevronDown,
   X,
@@ -20,18 +18,14 @@ const TopBar = ({ onToggleSidebar }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
+  // TopBar controls (search/settings) removed globally
   const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState(null);
   const navigate = useNavigate();
 
   const notifRef = useRef();
   const profileRef = useRef();
-  const settingsRef = useRef();
-  const searchRef = useRef();
+  // Removed settings/search refs
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
@@ -70,72 +64,7 @@ const TopBar = ({ onToggleSidebar }) => {
     }
   };
 
-  // Global search functionality
-  const handleSearch = async (term) => {
-    setSearchTerm(term);
-    if (term.length < 2) {
-      setSearchResults([]);
-      setShowSearchResults(false);
-      return;
-    }
-
-    try {
-      // Search in products, orders, dealers
-      const [products, orders, dealers] = await Promise.all([
-        dashboardAPI.getStats().then(s => s.products || []),
-        dashboardAPI.getStats().then(s => s.orders || []),
-        dashboardAPI.getStats().then(s => s.dealers || [])
-      ]);
-
-      const results = [];
-      
-      // Search products
-      products.forEach(product => {
-        if (product.product_name.toLowerCase().includes(term.toLowerCase()) ||
-            product.product_code.toLowerCase().includes(term.toLowerCase())) {
-          results.push({
-            type: 'product',
-            id: product.product_id,
-            title: product.product_name,
-            subtitle: product.product_code,
-            action: () => navigate('/products')
-          });
-        }
-      });
-
-      // Search orders
-      orders.forEach(order => {
-        if (order.order_code.toLowerCase().includes(term.toLowerCase())) {
-          results.push({
-            type: 'order',
-            id: order.order_id,
-            title: `Order ${order.order_code}`,
-            subtitle: `Status: ${order.order_status}`,
-            action: () => navigate('/orders')
-          });
-        }
-      });
-
-      // Search dealers
-      dealers.forEach(dealer => {
-        if (dealer.firm_name.toLowerCase().includes(term.toLowerCase()) ||
-            dealer.dealer_code.toLowerCase().includes(term.toLowerCase())) {
-          results.push({
-            type: 'dealer',
-            id: dealer.dealer_id,
-            title: dealer.firm_name,
-            subtitle: dealer.dealer_code,
-            action: () => navigate('/dealers')
-          });
-        }
-      });
-
-      setSearchResults(results.slice(0, 8));
-      setShowSearchResults(true);
-    } catch (error) {
-      console.error('Search error:', error);
-    }
-  };
+  // Global search removed
 
   // Handle sign out
   const handleSignOut = () => {
@@ -153,12 +82,7 @@ const TopBar = ({ onToggleSidebar }) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setShowProfile(false);
       }
-      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
-        setShowSettings(false);
-      }
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSearchResults(false);
-      }
+      // No settings/search controls
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -166,6 +90,9 @@ const TopBar = ({ onToggleSidebar }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const isDashboard = location.pathname.includes('/admin/dashboard');
+  const showTopBarControls = false;
 
   return (
     <div className="w-full bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-lg shadow-gray-200/20 relative z-40">
@@ -180,55 +107,7 @@ const TopBar = ({ onToggleSidebar }) => {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Search Bar - Now Functional! */}
-          <div ref={searchRef} className="hidden lg:flex items-center relative">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search products, orders, dealers..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-64 xl:w-80 pl-12 pr-4 py-3 bg-gray-50/80 border border-gray-200/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-300 text-gray-700 placeholder-gray-400"
-              />
-              
-              {/* Search Results Dropdown */}
-              {showSearchResults && searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[9999] max-h-96 overflow-y-auto">
-                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
-                    <h3 className="font-semibold text-gray-800">Search Results</h3>
-                  </div>
-                  {searchResults.map((result) => (
-                    <button
-                      key={`${result.type}-${result.id}`}
-                      onClick={() => {
-                        result.action();
-                        setShowSearchResults(false);
-                        setSearchTerm("");
-                      }}
-                      className="w-full p-4 text-left border-b border-gray-50 hover:bg-gray-50 transition-colors last:border-b-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          result.type === 'product' ? 'bg-blue-100 text-blue-600' :
-                          result.type === 'order' ? 'bg-green-100 text-green-600' :
-                          'bg-purple-100 text-purple-600'
-                        }`}>
-                          {result.type === 'product' ? <Package className="w-4 h-4" /> :
-                           result.type === 'order' ? <TrendingUp className="w-4 h-4" /> :
-                           <User className="w-4 h-4" />}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-800">{result.title}</p>
-                          <p className="text-sm text-gray-500">{result.subtitle}</p>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* TopBar search removed globally */}
         </div>
 
         {/* Center Logo - Better positioning */}
@@ -358,39 +237,7 @@ const TopBar = ({ onToggleSidebar }) => {
             )}
           </div>
 
-          {/* Settings - Now Functional! */}
-          <div ref={settingsRef} className="relative">
-            <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all duration-300 hover:shadow-lg group"
-              title="System Settings"
-            >
-              <Settings className="w-5 h-5 text-gray-600 group-hover:rotate-90 transition-transform duration-300" />
-            </button>
-
-            {/* Settings Dropdown */}
-            {showSettings && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 z-[9999] overflow-hidden">
-                <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
-                  <h3 className="font-semibold text-gray-800">System Settings</h3>
-                </div>
-                <div className="p-2">
-                  <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-3 transition-colors">
-                    <Package className="w-4 h-4" />
-                    Low Stock Threshold
-                  </button>
-                  <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-3 transition-colors">
-                    <TrendingUp className="w-4 h-4" />
-                    Business Rules
-                  </button>
-                  <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-3 transition-colors">
-                    <DollarSign className="w-4 h-4" />
-                    Financial Settings
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* TopBar settings removed globally */}
 
           {/* Profile Dropdown - Now Functional! */}
           <div ref={profileRef} className="relative">

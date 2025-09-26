@@ -16,7 +16,7 @@ import {
   Line,
 } from "recharts";
 import { dashboardAPI } from "../services/api";
-import { AlertTriangle, Package, TrendingUp, DollarSign, Clock, CheckCircle, FileText, IndianRupee } from "lucide-react";
+import { AlertTriangle, Package, TrendingUp, DollarSign, Clock, CheckCircle, FileText, IndianRupee, BarChart3, Trophy, Activity } from "lucide-react";
 import AIPoweredFeatures from "../components/AIPoweredFeatures";
 
 
@@ -121,7 +121,7 @@ const Dashboard = () => {
         <div className="flex items-center gap-4 mb-6">
           <div className="relative">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
-              <span className="text-white font-bold text-2xl">📊</span>
+              <BarChart3 className="w-8 h-8 text-white" />
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-xs">●</span>
               </div>
@@ -198,7 +198,7 @@ const Dashboard = () => {
           <div className="relative z-10">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xl">📊</span>
+                <Activity className="w-7 h-7 text-white" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-gray-800">
@@ -210,7 +210,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-2 gap-6">
               <div className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200 hover:scale-105 transition-transform">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-orange-600 text-3xl">⏳</span>
+                  <Clock className="w-7 h-7 text-orange-600" />
                   <span className="text-xs bg-orange-200 text-orange-700 px-2 py-1 rounded-full">
                     Pending
                   </span>
@@ -223,7 +223,7 @@ const Dashboard = () => {
               </div>
               <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl border border-green-200 hover:scale-105 transition-transform">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-green-600 text-3xl">✅</span>
+                  <CheckCircle className="w-7 h-7 text-green-600" />
                   <span className="text-xs bg-green-200 text-green-600 px-2 py-1 rounded-full">
                     Completed
                   </span>
@@ -435,7 +435,7 @@ const Dashboard = () => {
             ) : (
               <div className="h-full flex items-center justify-center text-gray-500">
                 <div className="text-center">
-                  <div className="text-4xl mb-2">📊</div>
+                  <BarChart3 className="w-10 h-10 mx-auto mb-2 text-gray-400" />
                   <p>No sales data available yet</p>
                   <p className="text-sm">Start creating orders and payments to see data</p>
                 </div>
@@ -448,7 +448,7 @@ const Dashboard = () => {
         <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold">🏆</span>
+              <Trophy className="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-gray-800">
@@ -509,9 +509,9 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))
-            ) : (
+              ) : (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">🏆</div>
+                <Trophy className="w-10 h-10 mx-auto mb-2 text-gray-400" />
                 <p>No sales data yet</p>
                 <p className="text-sm">Create orders to see top sellers</p>
               </div>

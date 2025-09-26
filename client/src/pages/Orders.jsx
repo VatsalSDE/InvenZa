@@ -18,8 +18,13 @@ import {
   Truck,
   FileText,
   IndianRupee,
+  Table,
+  Grid3X3,
 } from "lucide-react";
 import { ordersAPI, dealersAPI, productsAPI } from "../services/api";
+import OrdersTable from "../components/orders/OrdersTable";
+import PageHeader from "../components/ims/PageHeader";
+import OrderForm from "../components/orders/OrderForm";
 
 const Orders = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -35,6 +40,7 @@ const Orders = () => {
   const [editingOrder, setEditingOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
+  const [viewMode, setViewMode] = useState('grid');
 
   const [formData, setFormData] = useState({
     order_code: "",
@@ -340,29 +346,7 @@ const Orders = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-      {/* Enhanced Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-xl">
-              <ShoppingCart className="w-8 h-8 text-white" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">
-                  {pendingOrders}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              Orders Management
-            </h1>
-            <p className="text-gray-600 mt-2 text-lg">
-              Track and manage customer orders efficiently
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={<ShoppingCart className="w-8 h-8 text-white" />} title="Orders Management" subtitle="Track and manage customer orders efficiently" />
 
       {/* Enhanced Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
@@ -474,7 +458,34 @@ const Orders = () => {
         </div>
       </div>
 
-      {/* Enhanced Orders Grid */}
+      {/* View Controls */}
+      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 mb-6 flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          {filteredOrders.length} of {orders.length} orders
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`px-3 py-2 rounded-lg ${viewMode === 'table' ? 'bg-white text-blue-600 shadow' : 'bg-gray-100 text-gray-600'}`}
+            title="Table view"
+          >
+            <Table className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`px-3 py-2 rounded-lg ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow' : 'bg-gray-100 text-gray-600'}`}
+            title="Grid view"
+          >
+            <Grid3X3 className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'table' ? (
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+          <OrdersTable orders={filteredOrders} />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {filteredOrders.map((order) => (
           <div
@@ -583,6 +594,7 @@ const Orders = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* No Results */}
       {filteredOrders.length === 0 && (
@@ -622,187 +634,19 @@ const Orders = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              {/* Order Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Order Code
-                  </label>
-                  <input
-                    type="text"
-                    name="order_code"
-                    value={formData.order_code}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                    placeholder="Leave empty for auto-generation"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Dealer <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="dealer_id"
-                    value={formData.dealer_id}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                    required
-                  >
-                    <option value="">Select Dealer</option>
-                    {dealers.map(dealer => (
-                      <option key={dealer.dealer_id} value={dealer.dealer_id}>
-                        {dealer.firm_name} - {dealer.person_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Order Status
-                  </label>
-                  <select
-                    name="order_status"
-                    value={formData.order_status}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Processing">Processing</option>
-                    <option value="Shipped">Shipped</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-lg font-semibold text-gray-700 mb-3">
-                    Delivery Date
-                  </label>
-                  <input
-                    type="date"
-                    name="delivery_date"
-                    value={formData.delivery_date}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                  />
-                </div>
-              </div>
-
-              {/* Order Items */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <label className="block text-lg font-semibold text-gray-700">
-                    Order Items <span className="text-red-500">*</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
-                  >
-                    + Add Item
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {formData.items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Product
-                        </label>
-                        <select
-                          value={item.product_id}
-                          onChange={(e) => handleItemChange(index, 'product_id', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                          required
-                        >
-                          <option value="">Select Product</option>
-                          {products.map(product => (
-                            <option key={product.product_id} value={product.product_id}>
-                              {product.product_name} - ₹{product.price} (Stock: {product.quantity})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Quantity
-                        </label>
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                          placeholder="0"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Unit Price
-                        </label>
-                        <input
-                          type="number"
-                          value={item.unit_price}
-                          onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                          placeholder="0.00"
-                          required
-                        />
-                      </div>
-                      
-                      <div className="flex items-end">
-                        <button
-                          type="button"
-                          onClick={() => removeItem(index)}
-                          disabled={formData.items.length === 1}
-                          className="px-3 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Total Amount */}
-              <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <label className="block text-lg font-semibold text-blue-700">
-                    Total Amount
-                  </label>
-                  <div className="text-3xl font-bold text-blue-600">
-                    ₹{calculateTotal().toLocaleString()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex gap-4 pt-6 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    resetForm();
-                  }}
-                  className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl hover:from-blue-600 hover:to-indigo-600 transition-colors shadow-lg text-lg font-semibold"
-                >
-                  Create Order
-                </button>
-              </div>
-            </form>
+            <OrderForm
+              formData={formData}
+              dealers={dealers}
+              products={products}
+              onInputChange={handleInputChange}
+              onItemChange={handleItemChange}
+              onAddItem={addItem}
+              onRemoveItem={removeItem}
+              calculateTotal={calculateTotal}
+              onCancel={() => { setShowAddForm(false); resetForm(); }}
+              onSubmit={handleSubmit}
+              submitLabel="Create Order"
+            />
           </div>
         </div>
       )}
@@ -832,191 +676,19 @@ const Orders = () => {
                </div>
              </div>
 
-             <form onSubmit={handleUpdate} className="p-8 space-y-6">
-               {/* Order Details */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div>
-                   <label className="block text-lg font-semibold text-gray-700 mb-3">
-                     Order Code
-                   </label>
-                   <input
-                     type="text"
-                     name="order_code"
-                     value={formData.order_code}
-                     onChange={handleInputChange}
-                     className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                     placeholder="Order code"
-                   />
-                 </div>
-
-                 <div>
-                   <label className="block text-lg font-semibold text-gray-700 mb-3">
-                     Dealer <span className="text-red-500">*</span>
-                   </label>
-                   <select
-                     name="dealer_id"
-                     value={formData.dealer_id}
-                     onChange={handleInputChange}
-                     className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                     required
-                   >
-                     <option value="">Select Dealer</option>
-                     {dealers.map(dealer => (
-                       <option key={dealer.dealer_id} value={dealer.dealer_id}>
-                         {dealer.firm_name} - {dealer.person_name}
-                       </option>
-                     ))}
-                   </select>
-                 </div>
-
-                 <div>
-                   <label className="block text-lg font-semibold text-gray-700 mb-3">
-                     Order Status
-                   </label>
-                   <select
-                     name="order_status"
-                     value={formData.order_status}
-                     onChange={handleInputChange}
-                     className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                   >
-                     <option value="Pending">Pending</option>
-                     <option value="Processing">Processing</option>
-                     <option value="Shipped">Shipped</option>
-                     <option value="Completed">Completed</option>
-                     <option value="Cancelled">Cancelled</option>
-                   </select>
-                 </div>
-
-                 <div>
-                   <label className="block text-lg font-semibold text-gray-700 mb-3">
-                     Delivery Date
-                   </label>
-                   <input
-                     type="date"
-                     name="delivery_date"
-                     value={formData.delivery_date}
-                     onChange={handleInputChange}
-                     className="w-full px-4 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent text-lg"
-                   />
-                 </div>
-               </div>
-
-               {/* Order Items */}
-               <div>
-                 <div className="flex items-center justify-between mb-4">
-                   <label className="block text-lg font-semibold text-gray-700">
-                     Order Items <span className="text-red-500">*</span>
-                   </label>
-                   <button
-                     type="button"
-                     onClick={addItem}
-                     className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
-                   >
-                     + Add Item
-                   </button>
-                 </div>
-                 <p className="text-sm text-gray-600 mb-4">
-                   💡 Stock validation: You can only order up to the available stock quantity for each product.
-                 </p>
-                 
-                 <div className="space-y-4">
-                   {formData.items.map((item, index) => (
-                     <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-2xl">
-                       <div>
-                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                           Product
-                         </label>
-                         <select
-                           value={item.product_id}
-                           onChange={(e) => handleItemChange(index, 'product_id', e.target.value)}
-                           className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                           required
-                         >
-                           <option value="">Select Product</option>
-                           {products.map(product => (
-                             <option key={product.product_id} value={product.product_id}>
-                               {product.product_name} - ₹{product.price}
-                             </option>
-                           ))}
-                         </select>
-                       </div>
-                       
-                       <div>
-                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                           Quantity
-                         </label>
-                         <input
-                           type="number"
-                           value={item.quantity}
-                           onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                           className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                           placeholder="0"
-                           required
-                         />
-                       </div>
-                       
-                       <div>
-                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                           Unit Price
-                         </label>
-                         <input
-                           type="number"
-                           value={item.unit_price}
-                           onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
-                           className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                           placeholder="0.00"
-                           required
-                         />
-                       </div>
-                       
-                       <div className="flex items-end">
-                         <button
-                           type="button"
-                           onClick={() => removeItem(index)}
-                           disabled={formData.items.length === 1}
-                           className="px-3 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                         >
-                           Remove
-                         </button>
-                       </div>
-                     </div>
-                   ))}
-                 </div>
-               </div>
-
-               {/* Total Amount */}
-               <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200">
-                 <div className="flex items-center justify-between">
-                   <label className="block text-lg font-semibold text-blue-700">
-                     Total Amount
-                   </label>
-                   <div className="text-3xl font-bold text-blue-600">
-                     ₹{calculateTotal().toLocaleString()}
-                   </div>
-                 </div>
-               </div>
-
-               {/* Submit Buttons */}
-               <div className="flex gap-4 pt-6 border-t border-gray-100">
-                 <button
-                   type="button"
-                   onClick={() => {
-                     setShowEditForm(false);
-                     setEditingOrder(null);
-                     resetForm();
-                   }}
-                   className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold"
-                 >
-                   Cancel
-                 </button>
-                 <button
-                   type="submit"
-                   className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl hover:from-blue-600 hover:to-indigo-600 transition-colors shadow-lg text-lg font-semibold"
-                 >
-                   Update Order
-                 </button>
-               </div>
-             </form>
+             <OrderForm
+               formData={formData}
+               dealers={dealers}
+               products={products}
+               onInputChange={handleInputChange}
+               onItemChange={handleItemChange}
+               onAddItem={addItem}
+               onRemoveItem={removeItem}
+               calculateTotal={calculateTotal}
+               onCancel={() => { setShowEditForm(false); setEditingOrder(null); resetForm(); }}
+               onSubmit={handleUpdate}
+               submitLabel="Update Order"
+             />
            </div>
          </div>
        )}
