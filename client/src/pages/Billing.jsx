@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import BillPreview from "../components/billing/BillPreview";
 import BillingActions from "../components/billing/BillingActions";
+import { API_BASE_URL } from "../config";
 import {
   Plus,
   Search,
@@ -298,7 +299,7 @@ const Billing = () => {
       const billData = await generateBill(order, dealers, products);
       
       // Send email via backend API
-      const response = await fetch('/api/billing/send-email', {
+      const response = await fetch(`${API_BASE_URL}/billing/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -318,7 +319,15 @@ const Billing = () => {
           o.order_id === order.order_id ? { ...o, bill_sent: true } : o
         ));
       } else {
-        throw new Error('Failed to send email');
+        // Try to read server's JSON error message for better debugging
+        let body = null;
+        try {
+          body = await response.json();
+        } catch (e) {
+          // ignore JSON parse errors
+        }
+        const serverMsg = body && body.message ? body.message : `HTTP ${response.status}`;
+        throw new Error(serverMsg || 'Failed to send email');
       }
       
     } catch (error) {

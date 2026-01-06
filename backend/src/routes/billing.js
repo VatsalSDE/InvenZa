@@ -149,10 +149,30 @@ router.post('/send-email', requireAuth, async (req, res) => {
         }
       ]
     };
-    
-    await transporter.sendMail(mailOptions);
-    
-    console.log(`Bill email sent successfully to ${dealer_email} for order ${order_id}`);
+    // Verify transporter connection first (helps surface auth/connection errors)
+    try {
+      if (typeof transporter.verify === 'function') {
+        await transporter.verify();
+      }
+    } catch (verifyErr) {
+      console.error('Email transporter verification failed:', verifyErr);
+      // Return a clearer error message to the client in dev; keep generic in production
+      const msg = process.env.NODE_ENV === 'development'
+        ? `Email transporter verification failed: ${verifyErr.message}`
+        : 'Email service not available';
+      return res.status(500).json({ success: false, message: msg });
+    }
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Bill email sent successfully to ${dealer_email} for order ${order_id}`);
+    } catch (sendErr) {
+      console.error('Failed to send email:', sendErr);
+      const msg = process.env.NODE_ENV === 'development'
+        ? `Failed to send email: ${sendErr.message}`
+        : 'Failed to send email';
+      return res.status(500).json({ success: false, message: msg });
+    }
   // Mark order as bill_sent in database (adds column if missing)
   try {
     await query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS bill_sent BOOLEAN DEFAULT false');

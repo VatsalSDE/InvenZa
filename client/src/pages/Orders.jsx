@@ -20,11 +20,16 @@ import {
   IndianRupee,
   Table,
   Grid3X3,
+  Download,
+  Loader2,
 } from "lucide-react";
-import { ordersAPI, dealersAPI, productsAPI } from "../services/api";
+import { ordersAPI, dealersAPI, productsAPI, paymentsAPI } from "../services/api";
 import OrdersTable from "../components/orders/OrdersTable";
 import PageHeader from "../components/ims/PageHeader";
 import OrderForm from "../components/orders/OrderForm";
+import Toast from "../components/ui/Toast";
+import { useToast } from "../hooks/useToast";
+import { formatRelativeDate, formatDate, exportToCSV } from "../utils/dateFormatter";
 
 const Orders = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -35,12 +40,15 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [dealers, setDealers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
+  const { toasts, showToast, hideToast } = useToast();
 
   const [formData, setFormData] = useState({
     order_code: "",
@@ -58,20 +66,55 @@ const Orders = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [ordersData, dealersData, productsData] = await Promise.all([
+      const [ordersData, dealersData, productsData, paymentsData] = await Promise.all([
         ordersAPI.getAll(),
         dealersAPI.getAll(),
-        productsAPI.getAll()
+        productsAPI.getAll(),
+        paymentsAPI.getAll()
       ]);
       setOrders(ordersData);
       setDealers(dealersData);
       setProducts(productsData);
+      setPayments(paymentsData);
     } catch (err) {
       setError(err.message);
+      showToast('Failed to load orders: ' + err.message, 'error');
       console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExport = () => {
+    const exportData = filteredOrders.map(order => {
+      const paymentStatus = getOrderPaymentStatus(order.order_id, order.total_amount);
+      return {
+        'Order Code': order.order_code,
+        'Dealer': order.firm_name,
+        'Status': order.order_status,
+        'Total Amount': order.total_amount,
+        'Paid Amount': paymentStatus.totalPaid.toFixed(2),
+        'Balance': paymentStatus.remaining.toFixed(2),
+        'Payment Status': paymentStatus.isFullyPaid ? 'Paid' : 'Pending',
+        'Delivery Date': order.delivery_date ? formatDate(order.delivery_date) : 'N/A',
+        'Created': formatDate(order.created_at),
+      };
+    });
+    exportToCSV(exportData, 'orders');
+    showToast('Orders exported successfully!', 'success');
+  };
+
+  const getOrderPaymentStatus = (orderId, totalAmount) => {
+    const orderPayments = payments.filter(p => p.order_id === orderId);
+    const totalPaid = orderPayments.reduce((sum, p) => sum + parseFloat(p.paid_amount || 0), 0);
+    const remaining = parseFloat(totalAmount) - totalPaid;
+    
+    return {
+      totalPaid,
+      remaining,
+      percentage: (totalPaid / parseFloat(totalAmount)) * 100,
+      isFullyPaid: remaining <= 0.01
+    };
   };
 
   const generateOrderCode = () => {
@@ -150,13 +193,14 @@ const Orders = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       // Validate stock levels before submitting
       for (const item of formData.items) {
         if (item.product_id && item.quantity) {
           const product = products.find(p => p.product_id.toString() === item.product_id);
           if (product && parseInt(item.quantity) > product.quantity) {
-            alert(`Cannot order ${item.quantity} of ${product.product_name}. Available stock: ${product.quantity}`);
+            showToast(`Cannot order ${item.quantity} of ${product.product_name}. Available: ${product.quantity}`, 'error');
             return;
           }
         }
@@ -176,9 +220,13 @@ const Orders = () => {
       await loadData();
       resetForm();
       setShowAddForm(false);
+      showToast('Order created successfully!', 'success');
     } catch (err) {
       setError(err.message);
+      showToast('Failed to create order: ' + err.message, 'error');
       console.error('Failed to create order:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -254,12 +302,17 @@ const Orders = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this order?')) {
+      setSubmitting(true);
       try {
         await ordersAPI.delete(id);
         await loadData();
+        showToast('Order deleted successfully!', 'success');
       } catch (err) {
         setError(err.message);
+        showToast('Failed to delete order: ' + err.message, 'error');
         console.error('Failed to delete order:', err);
+      } finally {
+        setSubmitting(false);
       }
     }
   };
@@ -448,6 +501,15 @@ const Orders = () => {
             </select>
 
             <button
+              onClick={handleExport}
+              disabled={filteredOrders.length === 0}
+              className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-5 h-5" />
+              Export
+            </button>
+
+            <button
               onClick={() => setShowAddForm(true)}
               className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-8 py-4 rounded-2xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 text-lg font-semibold"
             >
@@ -508,7 +570,7 @@ const Orders = () => {
                         ₹{parseFloat(order.total_amount || 0).toLocaleString()}
                       </span>
                       <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium">
-                        {new Date(order.created_at).toLocaleDateString()}
+                        {formatRelativeDate(order.created_at)}
                       </span>
                     </div>
                   </div>
@@ -527,23 +589,54 @@ const Orders = () => {
             {/* Content Section */}
             <div className="p-6">
               {/* Order Details */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="text-center p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                  <p className="text-2xl font-bold text-blue-600">
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                <div className="text-center p-3 bg-blue-50 rounded-2xl border border-blue-200">
+                  <p className="text-xl font-bold text-blue-600">
                     {order.order_id}
                   </p>
                   <p className="text-xs text-blue-500 font-medium">
                     Order ID
                   </p>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-2xl border border-green-200">
-                  <p className="text-2xl font-bold text-green-600">
-                    {order.delivery_date ? new Date(order.delivery_date).toLocaleDateString() : 'Not set'}
+                <div className="text-center p-3 bg-green-50 rounded-2xl border border-green-200">
+                  <p className="text-xl font-bold text-green-600">
+                    {order.delivery_date ? formatDate(order.delivery_date) : 'Not set'}
                   </p>
                   <p className="text-xs text-green-500 font-medium">
                     Delivery Date
                   </p>
                 </div>
+                {(() => {
+                  const paymentStatus = getOrderPaymentStatus(order.order_id, order.total_amount);
+                  return (
+                    <div className={`text-center p-3 rounded-2xl border ${
+                      paymentStatus.isFullyPaid 
+                        ? 'bg-green-50 border-green-200' 
+                        : paymentStatus.totalPaid > 0 
+                        ? 'bg-yellow-50 border-yellow-200'
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <p className={`text-xl font-bold ${
+                        paymentStatus.isFullyPaid 
+                          ? 'text-green-600' 
+                          : paymentStatus.totalPaid > 0 
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>
+                        {paymentStatus.isFullyPaid ? '✓ Paid' : `₹${paymentStatus.remaining.toFixed(0)}`}
+                      </p>
+                      <p className={`text-xs font-medium ${
+                        paymentStatus.isFullyPaid 
+                          ? 'text-green-500' 
+                          : paymentStatus.totalPaid > 0 
+                          ? 'text-yellow-500'
+                          : 'text-red-500'
+                      }`}>
+                        {paymentStatus.isFullyPaid ? 'Fully Paid' : `Balance Due`}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Status Actions */}
@@ -645,7 +738,13 @@ const Orders = () => {
               calculateTotal={calculateTotal}
               onCancel={() => { setShowAddForm(false); resetForm(); }}
               onSubmit={handleSubmit}
-              submitLabel="Create Order"
+              submitLabel={submitting ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Creating...
+                </span>
+              ) : "Create Order"}
+              disabled={submitting}
             />
           </div>
         </div>
@@ -742,6 +841,19 @@ const Orders = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() => hideToast(toast.id)}
+            duration={toast.duration}
+          />
+        ))}
+      </div>
     </div>
   );
 };

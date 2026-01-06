@@ -19,6 +19,7 @@ import ProductForm from "../components/products/ProductForm";
 import ProductTable from "../components/products/ProductTable";
 import PageHeader from "../components/ims/PageHeader";
 import StatsCard from "../components/ims/StatsCard";
+import BulkImportModal from "../components/products/BulkImportModal";
 
 const Products = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -33,6 +34,8 @@ const Products = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const [formData, setFormData] = useState({
     product_name: "",
@@ -460,6 +463,14 @@ const Products = () => {
             </button>
 
             <button
+              onClick={() => setShowImport(true)}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 text-lg font-semibold"
+            >
+              <Upload className="w-5 h-5" />
+              Import CSV
+            </button>
+
+            <button
               onClick={async () => {
                 if (window.confirm('This will clean up old blob URLs and set them to default images. Continue?')) {
                   try {
@@ -680,6 +691,40 @@ const Products = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showImport && (
+        <BulkImportModal
+          isOpen={showImport}
+          onClose={() => setShowImport(false)}
+          busy={importing}
+          sample={`product_name,category,no_burners,type_burner,price,quantity,min_stock_level\nSteel Stove 2,steel,2,Brass,1999,10,10\nGlass Top 3,glass,3,Alloy,2999,5,8`}
+          onImport={async (rows) => {
+            try {
+              setImporting(true);
+              for (const r of rows) {
+                const newProduct = {
+                  product_name: r.product_name,
+                  category: r.category,
+                  no_burners: parseInt(r.no_burners),
+                  type_burner: r.type_burner,
+                  price: parseFloat(r.price),
+                  quantity: parseInt(r.quantity),
+                  min_stock_level: parseInt(r.min_stock_level),
+                  product_code: `${r.product_name.split(' ').map(w=>w.substring(0,3)).join('').toUpperCase()}-${r.category.toUpperCase()}-${r.no_burners}-${r.type_burner.toUpperCase()}`
+                };
+                await productsAPI.create(newProduct);
+              }
+              await loadProducts();
+              setShowImport(false);
+            } catch (e) {
+              alert('Import failed: ' + e.message);
+            } finally {
+              setImporting(false);
+            }
+          }}
+        />
       )}
     </div>
   );

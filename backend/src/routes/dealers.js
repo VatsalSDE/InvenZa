@@ -23,7 +23,8 @@ router.post('/', requireAuth, async (req, res) => {
     const { rows } = await query(sql, params);
     res.status(201).json(rows[0]);
   } catch (e) {
-    res.status(500).json({ message: 'Failed to create dealer' });
+    console.error('Failed to create dealer:', e);
+    res.status(500).json({ message: 'Failed to create dealer', error: e.message });
   }
 });
 

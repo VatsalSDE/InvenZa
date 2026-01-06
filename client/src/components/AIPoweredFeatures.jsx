@@ -1,35 +1,46 @@
 import React, { useState } from "react";
 import { Brain, Zap, Target, Lightbulb, TrendingUp, BarChart3, Activity, Package, Users, DollarSign, ShoppingCart, AlertTriangle } from "lucide-react";
 
-const AIPoweredFeatures = () => {
+const AIPoweredFeatures = ({ salesData = [], lowStock = [], stats = null }) => {
   const [activeFeature, setActiveFeature] = useState(0);
+
+  // Simple trend calculations from salesData
+  const totalSales = salesData.reduce((s, d) => s + (d.sales || 0), 0);
+  const totalTarget = salesData.reduce((s, d) => s + (d.target || 0), 0);
+  const efficiency = totalTarget > 0 ? Math.min(100, Math.round((totalSales / totalTarget) * 100)) : 87;
+
+  // Recommendations from low stock
+  const recommendations = (lowStock || []).slice(0, 3).map(p => ({
+    product_name: p.product_name,
+    suggestion: `Increase ${p.product_name} stock by ${Math.max(5, (p.min_stock_level || 10) - (p.quantity || 0) + 10)} units`
+  }));
 
   const features = [
     {
       icon: <Brain className="w-8 h-8" />,
       title: "AI-Powered Analytics",
-      description: "Advanced machine learning algorithms analyze your inventory patterns and predict future demand with 95% accuracy.",
-      stats: "95% Accuracy",
+      description: "Live trends based on your recent sales vs targets.",
+      stats: `${efficiency}% Efficiency`,
       color: "from-purple-500 to-pink-500"
     },
     {
       icon: <Zap className="w-8 h-8" />,
       title: "Smart Automation",
-      description: "Automatically reorder products when stock reaches critical levels and optimize pricing based on market trends.",
+      description: "Auto-reorder suggestions based on low stock thresholds and recent velocity.",
       stats: "24/7 Monitoring",
       color: "from-blue-500 to-cyan-500"
     },
     {
       icon: <Target className="w-8 h-8" />,
       title: "Predictive Insights",
-      description: "Get actionable insights on seasonal trends, customer behavior, and inventory optimization opportunities.",
+      description: "Identify surges and dips from recent performance to plan ahead.",
       stats: "Real-time Data",
       color: "from-green-500 to-emerald-500"
     },
     {
       icon: <Lightbulb className="w-8 h-8" />,
       title: "Intelligent Recommendations",
-      description: "AI suggests optimal product combinations, pricing strategies, and inventory adjustments for maximum profitability.",
+      description: "Concrete actions to prevent stockouts on critical SKUs.",
       stats: "Smart Suggestions",
       color: "from-orange-500 to-red-500"
     }
@@ -107,7 +118,7 @@ const AIPoweredFeatures = () => {
                   <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                     <TrendingUp className="w-4 h-4 text-green-600" />
                   </div>
-                  <p className="text-2xl font-bold text-gray-800">87%</p>
+                  <p className="text-2xl font-bold text-gray-800">{efficiency}%</p>
                   <p className="text-xs text-gray-500">Efficiency</p>
                 </div>
                 <div className="bg-white p-4 rounded-xl border border-gray-200 text-center">
@@ -123,18 +134,16 @@ const AIPoweredFeatures = () => {
               <div className="bg-white p-4 rounded-xl border border-gray-200">
                 <h4 className="font-semibold text-gray-800 mb-3">AI Predictions</h4>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">VS2 Gas Stove</span>
-                    <span className="text-green-600 font-medium">+15% demand</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Pressure Cooker</span>
-                    <span className="text-red-600 font-medium">-8% demand</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Gas Cylinder</span>
-                    <span className="text-green-600 font-medium">+22% demand</span>
-                  </div>
+                  {(stats ? [
+                    { name: 'Revenue vs Target', val: efficiency >= 100 ? '+5% over' : `-${100-efficiency}% under`, up: efficiency >= 100 },
+                    { name: 'Low Stock Items', val: String(stats.lowStockProducts), up: false },
+                    { name: 'Completed Orders', val: String(stats.completedOrders), up: true }
+                  ] : []).map((row, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">{row.name}</span>
+                      <span className={`${row.up ? 'text-green-600' : 'text-gray-700'} font-medium`}>{row.val}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -142,18 +151,14 @@ const AIPoweredFeatures = () => {
               <div className="bg-white p-4 rounded-xl border border-gray-200">
                 <h4 className="font-semibold text-gray-800 mb-3">Smart Recommendations</h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <span className="text-gray-600">Increase VS2 Gas Stove stock by 20 units</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-gray-600">Optimize pricing for Pressure Cooker</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-gray-600">Prepare for Gas Cylinder demand surge</span>
-                  </div>
+                  {recommendations.length > 0 ? recommendations.map((rec, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-gray-600">{rec.suggestion}</span>
+                    </div>
+                  )) : (
+                    <div className="text-gray-500">No critical recommendations right now.</div>
+                  )}
                 </div>
               </div>
             </div>

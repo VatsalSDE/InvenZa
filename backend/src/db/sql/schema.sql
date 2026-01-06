@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS login (
     username VARCHAR PRIMARY KEY,
     password TEXT NOT NULL
 );
-
 -- =========================
 -- 📁 Table: products
 -- =========================
@@ -33,7 +32,7 @@ CREATE TABLE IF NOT EXISTS dealers (
     dealer_code VARCHAR UNIQUE NOT NULL,
     firm_name TEXT NOT NULL,
     person_name TEXT,
-    gstin VARCHAR UNIQUE NOT NULL,
+    gstin VARCHAR,
     mobile_number VARCHAR(15),
     email TEXT,
     address TEXT,
@@ -48,7 +47,7 @@ CREATE TABLE IF NOT EXISTS orders (
     order_code VARCHAR UNIQUE NOT NULL,
     dealer_id INTEGER NOT NULL REFERENCES dealers(dealer_id) ON DELETE CASCADE,
     order_status TEXT DEFAULT 'Pending',
-    total_amount NUMERIC(10, 2),
+    total_amount NUMERIC(10,2),
     delivery_date DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -76,5 +75,3 @@ CREATE TABLE IF NOT EXISTS payments (
     transaction_id VARCHAR UNIQUE NOT NULL,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
-

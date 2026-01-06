@@ -140,6 +140,12 @@ const TopBar = ({ onToggleSidebar }) => {
 
         {/* Right Section */}
         <div className="flex items-center gap-3">
+          {import.meta.env.VITE_DEMO_MODE === 'true' && (
+            <span className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-purple-100 text-purple-700 border border-purple-200 font-medium text-xs">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              Demo Mode
+            </span>
+          )}
           {/* Quick Stats - Now Real-time! */}
           <div className="hidden 2xl:flex items-center gap-4 mr-4">
             <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-xl border border-green-200">
@@ -277,7 +283,7 @@ const TopBar = ({ onToggleSidebar }) => {
                     Profile Settings
                   </button>
                   <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-xl flex items-center gap-3 transition-colors">
-                    <Settings className="w-4 h-4" />
+                    {/* <Settings className="w-4 h-4" /> */}
                     Preferences
                   </button>
                   <hr className="my-2 border-gray-100" />

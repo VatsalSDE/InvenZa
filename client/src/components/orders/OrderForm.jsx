@@ -12,6 +12,7 @@ export default function OrderForm({
   onCancel,
   onSubmit,
   submitLabel = "Submit",
+  disabled = false,
 }) {
   return (
     <form onSubmit={onSubmit} className="p-8 space-y-6">
@@ -148,10 +149,10 @@ export default function OrderForm({
       </div>
 
       <div className="flex gap-4 pt-6 border-t border-gray-100">
-        <button type="button" onClick={onCancel} className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold">
+        <button type="button" onClick={onCancel} disabled={disabled} className="flex-1 px-6 py-4 border border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition-colors text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
           Cancel
         </button>
-        <button type="submit" className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl hover:from-blue-600 hover:to-indigo-600 transition-colors shadow-lg text-lg font-semibold">
+        <button type="submit" disabled={disabled} className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl hover:from-blue-600 hover:to-indigo-600 transition-colors shadow-lg text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
           {submitLabel}
         </button>
       </div>

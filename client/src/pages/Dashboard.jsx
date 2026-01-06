@@ -15,7 +15,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { dashboardAPI } from "../services/api";
+import { dashboardAPI, aiAPI } from "../services/api";
 import { AlertTriangle, Package, TrendingUp, DollarSign, Clock, CheckCircle, FileText, IndianRupee, BarChart3, Trophy, Activity } from "lucide-react";
 import AIPoweredFeatures from "../components/AIPoweredFeatures";
 
@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [topSellingItems, setTopSellingItems] = useState([]);
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [aiRecs, setAiRecs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -49,6 +50,11 @@ const Dashboard = () => {
       setTopSellingItems(topSellingRes);
       setLowStockAlerts(lowStockRes);
       setRecentActivities(activitiesRes);
+      // Load AI recommendations
+      try {
+        const recs = await aiAPI.getRecommendations();
+        setAiRecs(recs || []);
+      } catch (_) {}
     } catch (err) {
       setError(err.message);
       console.error('Failed to load dashboard data:', err);
@@ -339,6 +345,48 @@ const Dashboard = () => {
 
       {/* Second Row - Charts and Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* AI Recommendations Card - Only in Demo Mode */}
+        {import.meta.env.VITE_DEMO_MODE === 'true' && (
+          <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold">🤖</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">AI Recommendations</h3>
+                  <p className="text-gray-500 text-sm">Suggested reorders to avoid stockouts</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                {aiRecs.length}
+              </span>
+            </div>
+            {aiRecs.length > 0 ? (
+              <div className="space-y-4">
+                {aiRecs.slice(0, 6).map((r) => (
+                  <div key={r.product_id} className="p-4 border-2 border-gray-100 rounded-2xl hover:border-purple-200 hover:bg-purple-50 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-gray-800">{r.product_name}</p>
+                        <p className="text-xs text-gray-500">Current: {r.current_stock ?? '-'} • Target: {r.target_stock}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-purple-600">+{r.suggested_reorder_qty}</p>
+                        <p className="text-xs text-gray-400">Units</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 text-gray-500">
+                <p>No recommendations right now.</p>
+                <p className="text-sm">Great! Your stock levels look healthy.</p>
+              </div>
+            )}
+          </div>
+        )}
         {/* Daily Sales Chart */}
         <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300">
           <div className="flex items-center justify-between mb-8">
@@ -616,8 +664,10 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* AI-Powered Features Section */}
-      <AIPoweredFeatures />
+      {/* AI-Powered Features Section - Only in Demo Mode */}
+      {import.meta.env.VITE_DEMO_MODE === 'true' && (
+        <AIPoweredFeatures salesData={salesData} lowStock={lowStockAlerts} stats={stats} />
+      )}
 
 
     </div>

@@ -18,11 +18,16 @@ import {
   IndianRupee,
   Table,
   Grid3X3,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { paymentsAPI, ordersAPI, dealersAPI } from "../services/api";
 import PageHeader from "../components/ims/PageHeader";
 import PaymentsTable from "../components/payments/PaymentsTable";
 import PaymentForm from "../components/payments/PaymentForm";
+import Toast from "../components/ui/Toast";
+import { useToast } from "../hooks/useToast";
+import { formatPaymentDate, formatDate, exportToCSV } from "../utils/dateFormatter";
 
 const Payments = () => {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -33,16 +38,18 @@ const Payments = () => {
   const [orders, setOrders] = useState([]);
   const [dealers, setDealers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [editingPayment, setEditingPayment] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const { toasts, showToast, hideToast } = useToast();
 
   const [formData, setFormData] = useState({
     order_id: "",
     dealer_id: "",
     payment_method: "Cash",
-    paid_amount: "",
-    payment_date: "",
+    amount: "",
+    payment_date: new Date().toISOString().split('T')[0],
     payment_status: "Completed",
     reference_number: "",
     notes: "",
@@ -65,10 +72,26 @@ const Payments = () => {
       setDealers(dealersData);
     } catch (err) {
       setError(err.message);
+      showToast('Failed to load payments: ' + err.message, 'error');
       console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExport = () => {
+    const exportData = filteredPayments.map(payment => ({
+      'Payment ID': payment.payment_id,
+      'Dealer': dealers.find(d => d.dealer_id === payment.dealer_id)?.firm_name || 'N/A',
+      'Order': payment.order_code || 'General Payment',
+      'Amount': payment.paid_amount,
+      'Method': payment.payment_method,
+      'Status': payment.payment_status || 'Completed',
+      'Reference': payment.transaction_id || payment.reference_number || 'N/A',
+      'Date': formatDate(payment.payment_date),
+    }));
+    exportToCSV(exportData, 'payments');
+    showToast('Payments exported successfully!', 'success');
   };
 
   const generateReferenceNumber = () => {
@@ -82,10 +105,27 @@ const Payments = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: value,
+      };
+      
+      // Auto-populate dealer_id when order is selected
+      if (name === 'order_id' && value) {
+        const selectedOrder = orders.find(o => o.order_id === parseInt(value));
+        if (selectedOrder) {
+          updated.dealer_id = selectedOrder.dealer_id;
+        }
+      }
+      
+      // Clear order selection when dealer changes
+      if (name === 'dealer_id') {
+        updated.order_id = '';
+      }
+      
+      return updated;
+    });
   };
 
   const resetForm = () => {
@@ -93,8 +133,8 @@ const Payments = () => {
       order_id: "",
       dealer_id: "",
       payment_method: "Cash",
-      paid_amount: "",
-      payment_date: "",
+      amount: "",
+      payment_date: new Date().toISOString().split('T')[0],
       payment_status: "Completed",
       reference_number: "",
       notes: "",
@@ -103,29 +143,34 @@ const Payments = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     
     // Frontend validation
     if (!formData.dealer_id || formData.dealer_id === '') {
-      setError('Please select a dealer');
+      showToast('Please select a dealer', 'error');
+      setSubmitting(false);
       return;
     }
     
-    if (!formData.paid_amount || formData.paid_amount === '') {
-      setError('Please enter a valid amount');
+    if (!formData.amount || formData.amount === '') {
+      showToast('Please enter a valid amount', 'error');
+      setSubmitting(false);
       return;
     }
     
     // Convert to numbers for validation
     const dealerId = parseInt(formData.dealer_id);
-    const paidAmount = parseFloat(formData.paid_amount);
+    const paidAmount = parseFloat(formData.amount);
     
     if (isNaN(dealerId) || isNaN(paidAmount)) {
-      setError('Dealer ID and amount must be valid numbers');
+      showToast('Dealer ID and amount must be valid numbers', 'error');
+      setSubmitting(false);
       return;
     }
     
     if (paidAmount <= 0) {
-      setError('Amount must be greater than 0');
+      showToast('Amount must be greater than 0', 'error');
+      setSubmitting(false);
       return;
     }
     
@@ -133,11 +178,14 @@ const Payments = () => {
       const referenceNumber = formData.reference_number || generateReferenceNumber();
 
       const newPayment = {
-        ...formData,
-        dealer_id: dealerId, // Ensure it's a number
-        paid_amount: paidAmount, // Ensure it's a number
+        dealer_id: dealerId,
+        order_id: formData.order_id || null,
+        paid_amount: paidAmount,
+        payment_method: formData.payment_method,
         reference_number: referenceNumber,
-        payment_date: formData.payment_date || new Date().toISOString().split('T')[0]
+        payment_date: formData.payment_date || new Date().toISOString().split('T')[0],
+        payment_status: formData.payment_status,
+        notes: formData.notes
       };
 
       console.log('📤 Sending payment data:', newPayment);
@@ -145,10 +193,14 @@ const Payments = () => {
       await loadData();
       resetForm();
       setShowAddForm(false);
-      setError(null); // Clear any previous errors
+      setError(null);
+      showToast('Payment created successfully!', 'success');
     } catch (err) {
       setError(err.message);
+      showToast('Failed to create payment: ' + err.message, 'error');
       console.error('Failed to create payment:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -157,8 +209,8 @@ const Payments = () => {
     setFormData({
       order_id: payment.order_id?.toString() || "",
       dealer_id: payment.dealer_id?.toString() || "",
-      payment_method: payment.payment_method || "Cash",
-      paid_amount: payment.paid_amount?.toString() || "",
+      payment_method: payment.method || "Cash",
+      amount: payment.paid_amount?.toString() || "",
       payment_date: payment.payment_date ? payment.payment_date.split('T')[0] : "",
       payment_status: payment.payment_status || "Completed",
       reference_number: payment.reference_number || "",
@@ -170,9 +222,18 @@ const Payments = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
+      const dealerId = parseInt(formData.dealer_id);
+      const paidAmount = parseFloat(formData.amount);
+
       const updatedPayment = {
-        ...formData,
-        payment_date: formData.payment_date || new Date().toISOString().split('T')[0]
+        dealer_id: dealerId,
+        order_id: formData.order_id || null,
+        paid_amount: paidAmount,
+        payment_method: formData.payment_method,
+        reference_number: formData.reference_number,
+        payment_date: formData.payment_date || new Date().toISOString().split('T')[0],
+        payment_status: formData.payment_status,
+        notes: formData.notes
       };
 
       await paymentsAPI.update(editingPayment.payment_id, updatedPayment);
@@ -180,20 +241,29 @@ const Payments = () => {
       resetForm();
       setShowEditForm(false);
       setEditingPayment(null);
+      showToast('Payment updated successfully!', 'success');
     } catch (err) {
       setError(err.message);
+      showToast('Failed to update payment: ' + err.message, 'error');
       console.error('Failed to update payment:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this payment?')) {
+      setSubmitting(true);
       try {
         await paymentsAPI.delete(id);
         await loadData();
+        showToast('Payment deleted successfully!', 'success');
       } catch (err) {
         setError(err.message);
+        showToast('Failed to delete payment: ' + err.message, 'error');
         console.error('Failed to delete payment:', err);
+      } finally {
+        setSubmitting(false);
       }
     }
   };
@@ -374,6 +444,15 @@ const Payments = () => {
             </select>
 
             <button
+              onClick={handleExport}
+              disabled={filteredPayments.length === 0}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-5 h-5" />
+              Export
+            </button>
+
+            <button
               onClick={() => setShowAddForm(true)}
               className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-2xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 text-lg font-semibold"
             >
@@ -478,7 +557,7 @@ const Payments = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-800">
-                      {new Date(payment.payment_date).toLocaleDateString()}
+                      {formatPaymentDate(payment.payment_date)}
                     </p>
                     <p className="text-sm text-gray-500">Payment Date</p>
                   </div>
@@ -562,10 +641,18 @@ const Payments = () => {
             <PaymentForm
               formData={formData}
               orders={orders}
+              dealers={dealers}
+              payments={payments}
               onInputChange={handleInputChange}
               onCancel={() => { setShowAddForm(false); resetForm(); }}
               onSubmit={handleSubmit}
-              submitLabel="Add Payment"
+              submitLabel={submitting ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Creating...
+                </span>
+              ) : "Add Payment"}
+              disabled={submitting}
             />
           </div>
         </div>
@@ -599,6 +686,8 @@ const Payments = () => {
             <PaymentForm
               formData={formData}
               orders={orders}
+              dealers={dealers}
+              payments={payments}
               onInputChange={handleInputChange}
               onCancel={() => { setShowEditForm(false); setEditingPayment(null); resetForm(); }}
               onSubmit={handleUpdate}
@@ -607,6 +696,19 @@ const Payments = () => {
           </div>
         </div>
       )}
+
+      {/* Toast Container */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() => hideToast(toast.id)}
+            duration={toast.duration}
+          />
+        ))}
+      </div>
     </div>
   );
 };

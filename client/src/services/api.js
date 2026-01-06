@@ -123,6 +123,14 @@ export const paymentsAPI = {
 export const dashboardAPI = {
   getStats: async () => {
     try {
+      if (import.meta.env.VITE_DEMO_MODE === 'true') {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const res = await fetch(`${base}/dashboard/stats`);
+        if (res.ok) {
+          const stats = await res.json();
+          return stats;
+        }
+      }
       const [products, orders, payments] = await Promise.all([
         productsAPI.getAll(),
         ordersAPI.getAll(),
@@ -161,6 +169,11 @@ export const dashboardAPI = {
 
   getSalesData: async () => {
     try {
+      if (import.meta.env.VITE_DEMO_MODE === 'true') {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const res = await fetch(`${base}/dashboard/sales`);
+        if (res.ok) return await res.json();
+      }
       const orders = await ordersAPI.getAll();
       const payments = await paymentsAPI.getAll();
       
@@ -190,6 +203,11 @@ export const dashboardAPI = {
 
   getTopSellingProducts: async () => {
     try {
+      if (import.meta.env.VITE_DEMO_MODE === 'true') {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const res = await fetch(`${base}/dashboard/top-selling`);
+        if (res.ok) return await res.json();
+      }
       const orders = await ordersAPI.getAll();
       const products = await productsAPI.getAll();
       
@@ -231,6 +249,11 @@ export const dashboardAPI = {
 
   getLowStockProducts: async () => {
     try {
+      if (import.meta.env.VITE_DEMO_MODE === 'true') {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const res = await fetch(`${base}/dashboard/low-stock`);
+        if (res.ok) return await res.json();
+      }
       const products = await productsAPI.getAll();
       
       // Get products with low stock (quantity <= min_stock_level or default 10)
@@ -253,6 +276,11 @@ export const dashboardAPI = {
 
   getRecentActivities: async () => {
     try {
+      if (import.meta.env.VITE_DEMO_MODE === 'true') {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const res = await fetch(`${base}/dashboard/recent-activities`);
+        if (res.ok) return await res.json();
+      }
       const [orders, products, payments] = await Promise.all([
         ordersAPI.getAll(),
         productsAPI.getAll(),
@@ -298,5 +326,26 @@ export const dashboardAPI = {
       console.error('Error fetching recent activities:', error);
       return [];
     }
+  }
+};
+
+// AI helpers
+export const aiAPI = {
+  getRecommendations: async () => {
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+    if (import.meta.env.VITE_DEMO_MODE === 'true') {
+      const res = await fetch(`${base}/dashboard/recommendations`);
+      if (!res.ok) throw new Error('Failed to fetch recommendations');
+      return await res.json();
+    }
+    // In real mode, fallback to computing from low stock client-side for now
+    const lows = await dashboardAPI.getLowStockProducts();
+    return lows.map(p => ({
+      product_id: p.product_id,
+      product_name: p.product_name,
+      current_stock: p.quantity,
+      target_stock: (p.min_stock_level || 10) + 10,
+      suggested_reorder_qty: Math.max(0, (p.min_stock_level || 10) + 10 - (p.quantity || 0))
+    }));
   }
 };

@@ -31,7 +31,7 @@ export default function PageHeader({ icon, title, description, subtitle, right, 
           )}
         </div>
         <div className="flex-1">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 via-gray-700 to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 via-blue-600 to-purple-600 bg-clip-text text-transparent">
             {title}
           </h1>
           {(description || subtitle) && (
