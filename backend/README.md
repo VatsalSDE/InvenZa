@@ -16,13 +16,19 @@ npm install
 Create a `.env` file in the backend root directory:
 
 ```env
-# Database Configuration (Remote PostgreSQL)
-PGHOST=YOUR_REMOTE_DB_IP_ADDRESS
-PGPORT=5432
-PGDATABASE=storedb
-PGUSER=postgres
-PGPASSWORD=YOUR_DB_PASSWORD
-PGSSLMODE=prefer
+# Database Configuration (Supabase or any managed Postgres)
+# Recommended: use a single connection URL (includes SSL)
+# Supabase example (found under Project Settings → Database → Connection string):
+# postgres://USER:PASSWORD@HOST:6543/DBNAME?sslmode=require
+DATABASE_URL=postgres://...your_supabase_connection_string...
+
+# Optional: fallback individual fields (used only if DATABASE_URL is empty)
+# PGHOST=YOUR_DB_HOST
+# PGPORT=5432
+# PGDATABASE=storedb
+# PGUSER=postgres
+# PGPASSWORD=YOUR_DB_PASSWORD
+# PGSSLMODE=require
 
 # Server Configuration
 PORT=4000
@@ -142,10 +148,19 @@ The system includes tables for:
 ## 🚨 Troubleshooting
 
 ### Connection Issues
-1. Verify database server is running
-2. Check firewall settings
-3. Ensure PostgreSQL allows remote connections
-4. Verify credentials in `.env` file
+1. Verify your Supabase project is up (check Status page)
+2. Use the exact connection string from Supabase ("sslmode=require")
+3. Ensure `DATABASE_URL` is set in `backend/.env` and server restarted
+4. If using individual fields instead of `DATABASE_URL`, set `PGSSLMODE=require`
+5. Confirm your IP is allowed if you use the direct host/port option
+
+### Supabase Setup Quick Steps
+1. In Supabase, go to Project Settings → Database → Connection pooling or Connection string
+2. Copy the `URI` for Node.js (or psql). It often looks like:
+   `postgres://USER:PASSWORD@HOST:6543/DBNAME?sslmode=require`
+3. Set it as `DATABASE_URL` in `backend/.env`
+4. Run migrations if needed using your schema files or Supabase SQL editor
+5. Start the backend. `pool.js` auto-enables SSL and supports `DATABASE_URL`
 
 ### Common Errors
 - `ECONNREFUSED`: Database server not accessible

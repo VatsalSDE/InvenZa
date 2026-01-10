@@ -7,21 +7,23 @@ const { Pool } = pkg;
 
 function buildPoolConfig() {
   if (process.env.DATABASE_URL) {
-    const isRequire = (process.env.PGSSLMODE || '').toLowerCase() === 'require';
     return {
       connectionString: process.env.DATABASE_URL,
-      ssl: isRequire ? { rejectUnauthorized: false } : false,
+      ssl: {
+        rejectUnauthorized: false
+      }
     };
   }
 
-  const isRequire = (process.env.PGSSLMODE || '').toLowerCase() === 'require';
   return {
     host: process.env.PGHOST || 'localhost',
     port: Number(process.env.PGPORT || 5432),
     database: process.env.PGDATABASE || 'storedb',
     user: process.env.PGUSER || 'postgres',
     password: process.env.PGPASSWORD || 'postgres',
-    ssl: isRequire ? { rejectUnauthorized: false } : false,
+    ssl: {
+      rejectUnauthorized: false
+    }
   };
 }
 
@@ -29,7 +31,9 @@ export const pool = new Pool({
   ...buildPoolConfig(),
   max: 20, // Maximum number of clients
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds
+  connectionTimeoutMillis: 10000, // Increased timeout to 10 seconds
+  statement_timeout: 10000, // Statement timeout
+  query_timeout: 10000, // Query timeout
 });
 
 // Add error handling
