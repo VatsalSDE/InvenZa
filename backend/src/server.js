@@ -9,7 +9,20 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*' }));
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length === 0 || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  }
+}));
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
 
@@ -20,7 +33,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api', router);
 
 const port = Number(process.env.PORT || 4000);
-app.listen(port, async () => {
+const host = process.env.HOST || '0.0.0.0';
+
+app.listen(port, host, async () => {
   const shouldRunStartupDbSync = String(process.env.STARTUP_DB_SYNC || 'false').toLowerCase() === 'true';
   if (shouldRunStartupDbSync) {
     try {
@@ -30,5 +45,5 @@ app.listen(port, async () => {
       console.error('Startup DB sync failed:', e);
     }
   }
-  console.log(`Server listening on http://localhost:${port}`);
+  console.log(`Server listening on http://${host}:${port}`);
 });

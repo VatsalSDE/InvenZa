@@ -15,12 +15,25 @@ function buildPoolConfig() {
     };
   }
 
+  const hasDiscreteDbConfig = [
+    process.env.PGHOST,
+    process.env.PGDATABASE,
+    process.env.PGUSER,
+    process.env.PGPASSWORD
+  ].every(Boolean);
+
+  if (!hasDiscreteDbConfig) {
+    throw new Error(
+      'Database configuration missing. Set DATABASE_URL (recommended for Supabase) or provide PGHOST, PGDATABASE, PGUSER, and PGPASSWORD.'
+    );
+  }
+
   return {
-    host: process.env.PGHOST || 'localhost',
+    host: process.env.PGHOST,
     port: Number(process.env.PGPORT || 5432),
-    database: process.env.PGDATABASE || 'storedb',
-    user: process.env.PGUSER || 'postgres',
-    password: process.env.PGPASSWORD || 'postgres',
+    database: process.env.PGDATABASE,
+    user: process.env.PGUSER,
+    password: process.env.PGPASSWORD,
     ssl: {
       rejectUnauthorized: false
     }

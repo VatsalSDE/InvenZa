@@ -80,7 +80,20 @@ EMAIL_PASS=your_app_password
 Frontend variables (see `client/env.sample`):
 
 ```
-VITE_API_BASE_URL=http://localhost:4000
+VITE_API_BASE_URL=/api
+VITE_API_PROXY_TARGET=http://localhost:4000
+```
+
+For production (any device over internet), create `client/.env.production` using `client/env.production.sample` and set:
+
+```
+VITE_API_BASE_URL=https://your-backend-domain.com/api
+```
+
+Also set backend `CORS_ORIGIN` to your frontend domain(s), for example:
+
+```
+CORS_ORIGIN=https://your-frontend-domain.com
 ```
 
 ## 📦 Installation
@@ -123,6 +136,16 @@ npm run dev
 ```
 
 App UI: `http://localhost:5173` (proxy to API configured via CORS)
+
+## 🌍 Run On Any Device (No LAN Required)
+
+To let your friend use the app from another laptop/network, deploy both apps:
+
+1. Deploy `backend` to a public host (Render/Railway/Fly/EC2).
+2. Set backend env: `DATABASE_URL` (Supabase), `JWT_SECRET`, `CORS_ORIGIN` (frontend URL), `HOST=0.0.0.0`.
+3. Deploy `client` to a public host (Vercel/Netlify).
+4. In client production env set `VITE_API_BASE_URL=https://your-backend-domain.com/api`.
+5. Rebuild/redeploy frontend so the API URL is baked in.
 
 ## 🧪 Useful Scripts
 

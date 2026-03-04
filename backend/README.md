@@ -39,7 +39,7 @@ JWT_SECRET=your_super_secret_jwt_key_here
 JWT_EXPIRES_IN=24h
 
 # CORS Configuration
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:5173
 
 # Admin Password for seeding
 ADMIN_PASSWORD=admin123

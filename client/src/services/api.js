@@ -1,4 +1,5 @@
 import { apiFetch } from '../apiClient';
+import { API_BASE_URL } from '../config';
 
 // Authentication
 export const authAPI = {
@@ -28,7 +29,7 @@ export const productsAPI = {
     formData.append('image', file);
     
     // Use apiFetch for consistency with other endpoints
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'}/products/upload-image`, {
+    const response = await fetch(`${API_BASE_URL}/products/upload-image`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
@@ -46,7 +47,7 @@ export const productsAPI = {
   // Clean up old blob URLs
   cleanupBlobUrls: async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'}/products/cleanup-blob-urls`, {
+      const response = await fetch(`${API_BASE_URL}/products/cleanup-blob-urls`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
@@ -124,7 +125,7 @@ export const dashboardAPI = {
   getStats: async () => {
     try {
       if (import.meta.env.VITE_DEMO_MODE === 'true') {
-        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const base = API_BASE_URL;
         const res = await fetch(`${base}/dashboard/stats`);
         if (res.ok) {
           const stats = await res.json();
@@ -170,7 +171,7 @@ export const dashboardAPI = {
   getSalesData: async () => {
     try {
       if (import.meta.env.VITE_DEMO_MODE === 'true') {
-        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const base = API_BASE_URL;
         const res = await fetch(`${base}/dashboard/sales`);
         if (res.ok) return await res.json();
       }
@@ -204,7 +205,7 @@ export const dashboardAPI = {
   getTopSellingProducts: async () => {
     try {
       if (import.meta.env.VITE_DEMO_MODE === 'true') {
-        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const base = API_BASE_URL;
         const res = await fetch(`${base}/dashboard/top-selling`);
         if (res.ok) return await res.json();
       }
@@ -250,7 +251,7 @@ export const dashboardAPI = {
   getLowStockProducts: async () => {
     try {
       if (import.meta.env.VITE_DEMO_MODE === 'true') {
-        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const base = API_BASE_URL;
         const res = await fetch(`${base}/dashboard/low-stock`);
         if (res.ok) return await res.json();
       }
@@ -277,7 +278,7 @@ export const dashboardAPI = {
   getRecentActivities: async () => {
     try {
       if (import.meta.env.VITE_DEMO_MODE === 'true') {
-        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+        const base = API_BASE_URL;
         const res = await fetch(`${base}/dashboard/recent-activities`);
         if (res.ok) return await res.json();
       }
@@ -332,7 +333,7 @@ export const dashboardAPI = {
 // AI helpers
 export const aiAPI = {
   getRecommendations: async () => {
-    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+    const base = API_BASE_URL;
     if (import.meta.env.VITE_DEMO_MODE === 'true') {
       const res = await fetch(`${base}/dashboard/recommendations`);
       if (!res.ok) throw new Error('Failed to fetch recommendations');
