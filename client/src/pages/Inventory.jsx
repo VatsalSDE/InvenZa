@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
   X, Plus, Search, Edit, Trash2, Package, TrendingUp, AlertTriangle,
-  CheckCircle, Clock, BarChart3, Eye, Table, Grid3X3, Filter, Download, FileText,
+  CheckCircle, Clock, BarChart3, Eye, Table, Grid3X3, Filter, Download, FileText, RefreshCw
 } from "lucide-react";
-import { productsAPI } from "../services/api";
+import { productsAPI, aiAPI } from "../services/api";
 import PageHeader from "../components/ims/PageHeader";
 import StatsCard from "../components/ims/StatsCard";
 import StatusBadge from "../components/ui/StatusBadge";
@@ -21,11 +21,36 @@ const Inventory = () => {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [restockData, setRestockData] = useState(null);
+  const [restockLoading, setRestockLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     loadProducts();
     loadProfitability();
+    loadRestockSuggestions();
   }, []);
+
+  const loadRestockSuggestions = async (silent = false) => {
+    if (!silent) setRestockLoading(true);
+    setIsRefreshing(true);
+    
+    // Safety fallback: Hide skeleton after 5s
+    const timer = setTimeout(() => setRestockLoading(false), 5000);
+
+    try {
+      const res = await aiAPI.getRestockSuggestions();
+      if (res && res.success && res.data) {
+        setRestockData(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to load restock suggestions:", err);
+    } finally {
+      setRestockLoading(false);
+      setIsRefreshing(false);
+      clearTimeout(timer);
+    }
+  };
 
   const loadProfitability = async () => {
     try {
@@ -149,6 +174,45 @@ const Inventory = () => {
           </button>
         }
       />
+
+      {/* AI Restock Suggestions */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-green-400" />
+            <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Smart Restock Suggestions</h2>
+          </div>
+          <button 
+            onClick={() => loadRestockSuggestions()}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 text-xs text-zinc-500 hover:text-green-400 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Thinking...' : 'Refresh AI Suggestions'}
+          </button>
+        </div>
+
+        {restockLoading ? (
+          <div className="h-28 bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl animate-pulse flex items-center px-8 gap-5">
+            <div className="w-12 h-12 bg-[#2A2A2A] rounded-xl"></div>
+            <div className="flex-1 space-y-3">
+              <div className="h-4 bg-[#2A2A2A] rounded w-1/3"></div>
+              <div className="h-3 bg-[#2A2A2A] rounded w-2/3"></div>
+            </div>
+          </div>
+        ) : restockData ? (
+          <div className="p-5 bg-[#1A1A1A] border-l-4 border-l-green-500 border-y border-r border-[#2A2A2A] rounded-tr-2xl rounded-br-2xl flex items-start gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+            <div className="p-2.5 bg-green-500/10 rounded-xl mt-1">
+              <TrendingUp className="w-5 h-5 text-green-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-zinc-100 leading-relaxed whitespace-pre-line">
+                {restockData}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

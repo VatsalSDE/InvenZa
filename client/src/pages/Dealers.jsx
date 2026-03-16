@@ -3,7 +3,7 @@ import {
   X, Plus, Search, Edit, Users, TrendingUp, CreditCard, ShoppingCart, Phone, Mail, MapPin,
   Archive, RotateCcw, Download, Share2, Eye, Calendar, Trash2
 } from "lucide-react";
-import { dealersAPI, ordersAPI, paymentsAPI, archiveAPI } from "../services/api";
+import { dealersAPI, ordersAPI, paymentsAPI, archiveAPI, aiAPI } from "../services/api";
 import PageHeader from "../components/ims/PageHeader";
 import OrbitalLoader from "../components/ui/OrbitalLoader";
 import StatsCard from "../components/ims/StatsCard";
@@ -21,6 +21,8 @@ const Dealers = () => {
   const [payments, setPayments] = useState([]);
   const [paymentScores, setPaymentScores] = useState({});
   const [loading, setLoading] = useState(true);
+  const [riskScores, setRiskScores] = useState(null);
+  const [riskLoading, setRiskLoading] = useState(true);
   const [editingDealer, setEditingDealer] = useState(null);
   const [selectedDealer, setSelectedDealer] = useState(null);
   const [drawerTab, setDrawerTab] = useState("orders");
@@ -33,7 +35,29 @@ const Dealers = () => {
   const [ledgerFrom, setLedgerFrom] = useState(() => `2024-01-01`);
   const [ledgerTo, setLedgerTo] = useState(() => new Date().toLocaleDateString('en-CA'));
 
-  useEffect(() => { loadDealers(); }, []);
+  useEffect(() => { 
+    loadDealers(); 
+    loadRiskScores();
+  }, []);
+
+  const loadRiskScores = async () => {
+    // Safety timeout to hide skeleton after 5s
+    const timer = setTimeout(() => setRiskLoading(false), 5000);
+    try {
+      setRiskLoading(true);
+      const res = await aiAPI.getDealerRiskScores();
+      if (res && res.success && res.data) {
+        const riskMap = {};
+        res.data.forEach(item => riskMap[item.dealer_id] = item);
+        setRiskScores(riskMap);
+      }
+    } catch (err) {
+      console.error("Failed to load dealer risk scores:", err);
+    } finally {
+      setRiskLoading(false);
+      clearTimeout(timer);
+    }
+  };
 
   const loadDealers = async () => {
     try {
@@ -161,6 +185,7 @@ const Dealers = () => {
               <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Dealer</th>
               <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider hidden lg:table-cell">GSTIN</th>
               <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider hidden md:table-cell">Mobile</th>
+              <th className="text-center py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Risk Level</th>
               <th className="text-center py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Payment Score</th>
               <th className="text-right py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Outstanding</th>
               <th className="text-right py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Actions</th>
@@ -181,6 +206,24 @@ const Dealers = () => {
                     </td>
                     <td className="py-3 px-4 text-sm text-zinc-400 hidden lg:table-cell">{d.gstin || '—'}</td>
                     <td className="py-3 px-4 text-sm text-zinc-400 hidden md:table-cell">{d.mobile_number}</td>
+                    <td className="py-3 px-4 text-center">
+                      {riskLoading ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-500 animate-pulse border border-zinc-700">Loading...</span>
+                      ) : riskScores && riskScores[d.dealer_id] ? (
+                        <span 
+                          title={riskScores[d.dealer_id].reason}
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border cursor-help shadow-sm transition-all hover:scale-105 ${
+                            riskScores[d.dealer_id].risk_level === 'Low Risk' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                            riskScores[d.dealer_id].risk_level === 'Medium Risk' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                            'bg-red-500/10 text-red-400 border-red-500/20'
+                          }`}
+                        >
+                          {riskScores[d.dealer_id].risk_level}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-zinc-600">Unknown</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 text-center">
                       {paymentScores[d.dealer_id] && paymentScores[d.dealer_id].score !== null ? (
                         <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-medium border ${paymentScores[d.dealer_id].score >= 85 ? 'bg-green-500/15 text-green-400 border-green-500/20' :

@@ -108,10 +108,11 @@ const PurchasesPage = () => {
             const prods = updatedProducts.data?.data || updatedProducts.data || updatedProducts || [];
             setProducts(prods);
 
-            // Select the newly created product in the row
+            // Select the newly created product in the row and sync quantity/price
             const items = [...formData.items];
             items[quickAddIndex].product_id = newProduct.product_id;
-            items[quickAddIndex].cost_per_unit = newProduct.price;
+            items[quickAddIndex].qty = quickAddFormData.quantity; // Sync quantity from modal
+            items[quickAddIndex].cost_per_unit = quickAddFormData.price; // Sync price from modal
             setFormData({ ...formData, items });
 
             setShowQuickAdd(false);

@@ -101,6 +101,24 @@ export const suppliersAPI = {
     const response = await axiosInstance.get(`/suppliers/${id}/models`);
     return response.data;
   },
+  
+  /**
+   * Payment related methods (Proxied to supplier-payments)
+   */
+  getSupplierPayments: async (supplierId) => {
+    const response = await axiosInstance.get(`/supplier-payments/supplier/${supplierId}`);
+    return response.data;
+  },
+
+  recordSupplierPayment: async (data) => {
+    const response = await axiosInstance.post('/supplier-payments', data);
+    return response.data;
+  },
+
+  deleteSupplierPayment: async (id) => {
+    const response = await axiosInstance.delete(`/supplier-payments/${id}`);
+    return response.data;
+  },
 };
 
 export default suppliersAPI;

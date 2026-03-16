@@ -15,6 +15,7 @@ export { dashboardAPI } from './dashboardAPI.js';
 export { billingAPI } from './billingAPI.js';
 export { supplierPaymentsAPI } from './supplierPaymentsAPI.js';
 export { profitAPI } from './profitAPI.js';
+export { aiAPI } from './aiAPI.js';
 
 // Settings API - localStorage for display preferences only
 const LS_KEYS = {

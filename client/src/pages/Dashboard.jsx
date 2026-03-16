@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
-  IndianRupee, Package, ShoppingCart, CreditCard, AlertTriangle, Clock, Eye
+  IndianRupee, Package, ShoppingCart, CreditCard, AlertTriangle, Clock, Eye, Sparkles
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from "recharts";
-import { dashboardAPI } from "../services/api";
+import { dashboardAPI, aiAPI } from "../services/api";
 import BusinessInsights from "../components/BusinessInsights";
 import OrbitalLoader from "../components/ui/OrbitalLoader";
 import StatsCard from "../components/ims/StatsCard";
@@ -19,10 +19,49 @@ const Dashboard = () => {
   const [topSellingItems, setTopSellingItems] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [anomalyData, setAnomalyData] = useState(null);
+  const [anomalyLoading, setAnomalyLoading] = useState(true);
+  const [digestData, setDigestData] = useState(null);
+  const [digestLoading, setDigestLoading] = useState(true);
 
   useEffect(() => {
     loadDashboard();
+    checkAnomalies();
+    loadMorningDigest();
   }, []);
+
+  const loadMorningDigest = async () => {
+    // Safety fallback: Hide skeleton after 5s
+    const timer = setTimeout(() => setDigestLoading(false), 5000);
+    try {
+      const res = await aiAPI.getMorningDigest();
+      if (res && res.success && res.data) {
+        setDigestData(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to load morning digest:", err);
+    } finally {
+      setDigestLoading(false);
+      clearTimeout(timer);
+    }
+  };
+
+  const checkAnomalies = async () => {
+    // Safety fallback: Hide skeleton after 3s regardless of data
+    const timer = setTimeout(() => setAnomalyLoading(false), 3000);
+    
+    try {
+      const res = await aiAPI.getAnomalyCheck();
+      if (res && res.success && res.data) {
+        setAnomalyData(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to check anomalies:", err);
+    } finally {
+      setAnomalyLoading(false);
+      clearTimeout(timer);
+    }
+  };
 
   const loadDashboard = async () => {
     try {
@@ -91,6 +130,60 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#0F0F0F] p-6">
+      {/* AI Intelligence Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* AI Morning Digest */}
+        {digestLoading ? (
+          <div className="h-32 bg-[#1A1A1A] border border-green-500/20 rounded-2xl animate-pulse flex items-center px-6 gap-4">
+            <div className="w-12 h-12 bg-[#2A2A2A] rounded-xl"></div>
+            <div className="flex-1 space-y-3">
+              <div className="h-4 bg-[#2A2A2A] rounded w-1/3"></div>
+              <div className="h-3 bg-[#2A2A2A] rounded w-3/4"></div>
+              <div className="h-3 bg-[#2A2A2A] rounded w-1/2"></div>
+            </div>
+          </div>
+        ) : digestData ? (
+          <div className="p-5 bg-green-500/[0.02] border border-green-500/20 rounded-2xl flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+            <div className="p-3 bg-green-500/10 rounded-2xl mt-0.5">
+              <Sparkles className="w-5 h-5 text-green-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-green-400 mb-2 uppercase tracking-tight flex items-center gap-2">
+                Today's Business Digest
+              </h3>
+              <p className="text-sm text-zinc-100 leading-relaxed font-medium">
+                {digestData}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {/* AI Business Alert */}
+        {anomalyLoading ? (
+          <div className="h-32 bg-[#1A1A1A] border border-amber-500/20 rounded-2xl animate-pulse flex items-center px-6 gap-4">
+            <div className="w-12 h-12 bg-[#2A2A2A] rounded-xl"></div>
+            <div className="flex-1 space-y-3">
+              <div className="h-4 bg-[#2A2A2A] rounded w-1/3"></div>
+              <div className="h-3 bg-[#2A2A2A] rounded w-3/4"></div>
+            </div>
+          </div>
+        ) : anomalyData ? (
+          <div className="p-5 bg-amber-500/[0.02] border border-amber-500/20 rounded-2xl flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+            <div className="p-3 bg-amber-500/10 rounded-2xl mt-0.5">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-amber-500 mb-2 uppercase tracking-tight flex items-center gap-2">
+                Action Required: Anomaly Detected
+              </h3>
+              <p className="text-sm text-zinc-100 leading-relaxed font-medium">
+                {anomalyData}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatsCard title="Total Revenue" value={formatCurrency(stats.totalRevenue)} icon={IndianRupee} accentColor="green" />

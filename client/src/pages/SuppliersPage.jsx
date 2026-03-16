@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
     Truck, CheckCircle, Package, ClipboardList, Search, Plus, MapPin, Phone, Mail,
-    Edit, Archive, RotateCcw, X, Tag, Download
+    Edit, Archive, RotateCcw, X, Tag, Download, Trash2
 } from "lucide-react";
 import { suppliersAPI, productsAPI, purchasesAPI, supplierPaymentsAPI, archiveAPI } from "../services/api";
 import StatusBadge from "../components/ui/StatusBadge";
@@ -46,12 +46,12 @@ const SuppliersPage = () => {
                 productsAPI.getAll(),
                 purchasesAPI.getAll()
             ]);
-            setSuppliers(s.data?.data || s.data || s || []);
-            setProducts(p.data?.data || p.data || p || []);
-            setPurchases(pu.data?.data || pu.data || pu || []);
+            setSuppliers(s || []);
+            setProducts(p || []);
+            setPurchases(pu || []);
             // Fetch all supplier models for the grid view
-            const modelsPromises = (s.data?.data || s.data || s || []).map(sup => 
-                suppliersAPI.getSupplierModels(sup.supplier_id).then(m => ({ id: sup.supplier_id, models: m.data || m || [] }))
+            const modelsPromises = (s || []).map(sup => 
+                suppliersAPI.getSupplierModels(sup.supplier_id).then(m => ({ id: sup.supplier_id, models: m || [] }))
             );
             const allModels = await Promise.all(modelsPromises);
             const modelsMap = {};
@@ -131,8 +131,8 @@ const SuppliersPage = () => {
                 suppliersAPI.getSupplierLedger(s.supplier_id),
                 supplierPaymentsAPI.getAll({ supplier_id: s.supplier_id })
             ]);
-            setSelectedSupplierPurchases(pRes.data?.data || pRes.data || pRes || []);
-            setSelectedSupplierPayments(payRes.data?.data || payRes.data || payRes || []);
+            setSelectedSupplierPurchases(pRes || []);
+            setSelectedSupplierPayments(payRes || []);
         } catch (err) {
             console.error("Error loading supplier drawer data:", err);
             setSelectedSupplierPurchases(purchases.filter(p => p.supplier_id === s.supplier_id));
@@ -143,16 +143,32 @@ const SuppliersPage = () => {
     const handleRecordPayment = async (e) => {
         e.preventDefault();
         try {
-            await supplierPaymentsAPI.create({ ...payFormData, supplier_id: selectedSupplier.supplier_id });
+            await suppliersAPI.recordSupplierPayment({ 
+                ...payFormData, 
+                supplier_id: selectedSupplier.supplier_id 
+            });
             // Refresh payments for the drawer
-            const payRes = await supplierPaymentsAPI.getAll({ supplier_id: selectedSupplier.supplier_id });
-            setSelectedSupplierPayments(payRes.data?.data || payRes.data || payRes || []);
+            const payRes = await suppliersAPI.getSupplierPayments(selectedSupplier.supplier_id);
+            setSelectedSupplierPayments(payRes || []);
             setPayFormData(emptyPayForm);
             setShowPaymentForm(false);
+            // CRITICAL: Refresh the entire supplier list to update the owed_amount on the card
             loadData();
         } catch (err) {
             console.error("Failed to record payment:", err);
             alert("Error: " + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleDeletePayment = async (paymentId) => {
+        if (!window.confirm("Are you sure you want to delete this payment record?")) return;
+        try {
+            await suppliersAPI.deleteSupplierPayment(paymentId);
+            const payRes = await suppliersAPI.getSupplierPayments(selectedSupplier.supplier_id);
+            setSelectedSupplierPayments(payRes || []);
+            loadData(); // Refresh the card owed amount
+        } catch (err) {
+            console.error("Failed to delete payment:", err);
         }
     };
 
@@ -274,9 +290,9 @@ const SuppliersPage = () => {
                                     {/* Financials & Balances */}
                                     <div className="flex justify-between items-end mb-4 bg-zinc-900/50 p-3 rounded-lg border border-zinc-800/50">
                                         <div>
-                                            <p className="text-xs text-zinc-500 mb-1">Total Purchased</p>
-                                            <p className="text-base font-bold text-green-400">
-                                                {formatCurrency(calculateTotalPurchased(supplier.supplier_id))}
+                                            <p className="text-xs text-zinc-500 mb-1">Amount Owed</p>
+                                            <p className={`text-base font-bold ${supplier.owed_amount > 0 ? 'text-amber-500' : 'text-zinc-500'}`}>
+                                                {formatCurrency(supplier.owed_amount || 0)}
                                             </p>
                                         </div>
                                         <button onClick={() => openDrawer(supplier)} className="text-xs flex items-center gap-1 text-zinc-300 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-all duration-100 active:scale-95 active:brightness-90">
@@ -341,7 +357,20 @@ const SuppliersPage = () => {
                                     {selectedSupplier.mobile && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {selectedSupplier.mobile}</span>}
                                     {selectedSupplier.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {selectedSupplier.email}</span>}
                                 </div>
-                                <div className="mt-3 text-lg font-bold text-green-400">{formatCurrency(calculateTotalPurchased(selectedSupplier.supplier_id))} <span className="text-xs font-normal text-zinc-500">total purchased</span></div>
+                                <div className="mt-3 flex items-center justify-between">
+                                    <div>
+                                        <p className={`text-xl font-bold ${selectedSupplier.owed_amount > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
+                                            {formatCurrency(selectedSupplier.owed_amount || 0)}
+                                        </p>
+                                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Current Amount Owed</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-lg font-semibold text-zinc-300">
+                                            {formatCurrency(calculateTotalPurchased(selectedSupplier.supplier_id))}
+                                        </p>
+                                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Total Lifetime Purchased</p>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Tabs */}
@@ -359,7 +388,7 @@ const SuppliersPage = () => {
                                             getSupplierPurchases(selectedSupplier.supplier_id).map((p, i) => (
                                                 <div key={i} className="bg-[#222222] border border-[#2A2A2A] rounded-xl p-3 flex justify-between items-center">
                                                     <div><p className="text-sm text-white font-medium">{p.purchase_code}</p><p className="text-xs text-zinc-500">{(p.purchase_date || p.created_at || "").split("T")[0]}</p></div>
-                                                    <div className="text-right"><p className="text-sm font-medium text-orange-400">{formatCurrency(p.calculated_total || p.total_amount)}</p><StatusBadge status={p.status === 'received' ? 'Received' : 'Pending'} /></div>
+                                                    <div className="text-right"><p className="text-sm font-medium text-orange-400">{formatCurrency(p.calculated_total || p.total_cost || p.total_amount)}</p></div>
                                                 </div>
                                             ))
                                         )}
@@ -399,11 +428,25 @@ const SuppliersPage = () => {
                                         )}
 
                                         <div className="space-y-2 mt-4">
-                                            {getSupplierPayments(selectedSupplier.supplier_id).length === 0 ? <p className="text-zinc-600 text-sm text-center py-4">No payments recorded</p> : (
-                                                getSupplierPayments(selectedSupplier.supplier_id).map((p, i) => (
-                                                    <div key={i} className="bg-[#222222] border border-[#2A2A2A] rounded-xl p-3 flex justify-between items-center">
-                                                        <div><p className="text-sm text-white font-medium">{formatCurrency(p.paid_amount)}</p><p className="text-xs text-zinc-500">{(p.payment_date || "").split("T")[0]}</p></div>
-                                                        <div className="text-right"><StatusBadge status={p.method || "N/A"} /><p className="text-[10px] text-zinc-500 mt-1">{p.reference_number || ""}</p></div>
+                                            {selectedSupplierPayments.length === 0 ? <p className="text-zinc-600 text-sm text-center py-4">No payments recorded</p> : (
+                                                selectedSupplierPayments.map((p, i) => (
+                                                    <div key={i} className="bg-[#222222] border border-[#2A2A2A] rounded-xl p-3 flex justify-between items-center group">
+                                                        <div>
+                                                            <p className="text-sm text-white font-medium">{formatCurrency(p.paid_amount)}</p>
+                                                            <p className="text-xs text-zinc-500">{(p.payment_date || "").split("T")[0]}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="text-right">
+                                                                <StatusBadge status={p.method || "N/A"} />
+                                                                <p className="text-[10px] text-zinc-500 mt-1">{p.reference_number || ""}</p>
+                                                            </div>
+                                                            <button 
+                                                                onClick={() => handleDeletePayment(p.payment_id)}
+                                                                className="p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))
                                             )}
