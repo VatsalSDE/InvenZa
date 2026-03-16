@@ -11,6 +11,7 @@ import dashboardRoutes from './dashboard.routes.js';
 import supplierPaymentsRoutes from './supplier_payments.routes.js';
 import profitRoutes from './profit.routes.js';
 import expensesRoutes from './expenses.routes.js';
+import aiRoutes from './ai.routes.js';
 
 const router = Router();
 
@@ -36,6 +37,7 @@ router.use('/supplier-payments', supplierPaymentsRoutes);
 
 // Dashboard & Analytics
 router.use('/dashboard', dashboardRoutes);
+router.use('/ai', aiRoutes);
 
 // Profit & Loss
 router.use('/profit', profitRoutes);

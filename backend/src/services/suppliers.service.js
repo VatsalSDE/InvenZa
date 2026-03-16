@@ -36,7 +36,47 @@ export const getAllSuppliers = async (filters = {}) => {
     throw { statusCode: 500, message: 'Failed to fetch suppliers' };
   }
 
-  return data || [];
+  // 1. Efficient Aggregation: Fetch all purchase items with their supplier_id
+  const { data: allItems, error: itemsError } = await supabase
+    .from('purchase_items')
+    .select('qty, cost_per_unit, purchases!inner(supplier_id)');
+
+  // 2. Efficient Aggregation: Fetch all supplier payments
+  const { data: allPayments, error: paymentsError } = await supabase
+    .from('supplier_payments')
+    .select('supplier_id, paid_amount');
+
+  // Map to store totals per supplier
+  const purchaseTotals = {};
+  const paymentTotals = {};
+
+  (allItems || []).forEach(item => {
+    const sId = item.purchases?.supplier_id;
+    if (sId) {
+      purchaseTotals[sId] = (purchaseTotals[sId] || 0) + (item.qty * item.cost_per_unit);
+    }
+  });
+
+  (allPayments || []).forEach(payment => {
+    const sId = payment.supplier_id;
+    if (sId) {
+      paymentTotals[sId] = (paymentTotals[sId] || 0) + (parseFloat(payment.paid_amount) || 0);
+    }
+  });
+
+  // 3. Map totals onto suppliers
+  const suppliersWithStats = (data || []).map(supplier => {
+    const totalPurchased = purchaseTotals[supplier.supplier_id] || 0;
+    const totalPaid = paymentTotals[supplier.supplier_id] || 0;
+    const owedAmount = Math.max(0, totalPurchased - totalPaid);
+
+    return {
+      ...supplier,
+      owed_amount: owedAmount
+    };
+  });
+
+  return suppliersWithStats;
 };
 
 /**
@@ -79,12 +119,15 @@ export const getSupplierById = async (supplierId) => {
   }
 
   // Fetch auto-mapped models
-  const { data: models } = await supabase
+  const { data: models, error: modelsError } = await supabase
     .from('supplier_models')
     .select('product_name')
     .eq('supplier_id', supplierId);
 
-  return { ...data, auto_mapped_models: models || [] };
+  // If table is missing (PGRST204/205), just return empty array instead of crashing
+  const modelsData = modelsError ? [] : (models || []);
+
+  return { ...data, auto_mapped_models: modelsData };
 };
 
 /**
@@ -99,6 +142,10 @@ export const getSupplierModels = async (supplierId) => {
     .eq('supplier_id', supplierId);
 
   if (error) {
+    // If table is missing (PGRST205), return empty array
+    if (error.code === 'PGRST205' || error.code === 'PGRST204' || error.message.includes('not found')) {
+      return [];
+    }
     console.error('Error fetching supplier models:', error);
     throw { statusCode: 500, message: 'Failed to fetch supplier models' };
   }

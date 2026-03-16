@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import router from './routes/index.routes.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
+import './config/gemini.js';
 
 // Load environment variables
 dotenv.config();

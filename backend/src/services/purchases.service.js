@@ -206,7 +206,6 @@ export const createPurchase = async (purchaseData) => {
       supplier_id,
       status,
       total_cost: calculatedTotal,
-      total_amount: calculatedTotal,
       items_count: items_count || items.length
     })
     .select()
@@ -223,8 +222,12 @@ export const createPurchase = async (purchaseData) => {
     const qty = item.qty || item.quantity;
     const cost_per_unit = item.cost_per_unit || item.unit_cost;
 
-    if (!product_id || !qty) {
-      throw { statusCode: 400, message: 'Product ID and qty are required for each item' };
+    if (!product_id) {
+      throw { statusCode: 400, message: 'Product ID is missing for one or more items.' };
+    }
+    
+    if (!qty || isNaN(qty)) {
+      throw { statusCode: 400, message: 'Quantity is missing or invalid for one or more items.' };
     }
 
     // Insert purchase item
@@ -233,8 +236,8 @@ export const createPurchase = async (purchaseData) => {
       .insert({
         purchase_id: purchase.purchase_id,
         product_id,
-        quantity: qty,
-        unit_cost: cost_per_unit || 0,
+        qty: qty,
+        cost_per_unit: cost_per_unit || 0,
       });
 
     if (itemError) {
@@ -266,29 +269,32 @@ export const createPurchase = async (purchaseData) => {
     // This allows the supplier card to show all models they have supplied
     try {
       // Get product name for mapping
-      const { data: prodData } = await supabase
+      const { data: prodData, error: prodError } = await supabase
         .from('products')
         .select('product_name')
         .eq('product_id', product_id)
         .single();
 
-      if (prodData) {
+      if (prodData && !prodError) {
         // Check if mapping already exists
-        const { data: existingMapping } = await supabase
+        const { data: existingMapping, error: findError } = await supabase
           .from('supplier_models')
           .select('id')
           .eq('supplier_id', supplier_id)
           .eq('product_name', prodData.product_name)
           .single();
 
-        if (!existingMapping) {
+        // If table exists but mapping doesn't
+        if (!existingMapping && (!findError || findError.code === 'PGRST116')) {
           // Create new mapping
-          await supabase
+          const { error: insertError } = await supabase
             .from('supplier_models')
             .insert({
               supplier_id,
               product_name: prodData.product_name
             });
+            
+          if (insertError) console.warn('Auto-mapping insert failed:', insertError.message);
         }
       }
     } catch (mappingError) {
@@ -455,14 +461,14 @@ export const getPurchasesBySupplier = async (supplierId) => {
   const purchasesWithTotals = await Promise.all((data || []).map(async (purchase) => {
     const { data: items } = await supabase
       .from('purchase_items')
-      .select('quantity, unit_cost')
+      .select('qty, cost_per_unit')
       .eq('purchase_id', purchase.purchase_id);
     
-    const calculated = (items || []).reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
+    const calculated = (items || []).reduce((sum, item) => sum + (item.qty * item.cost_per_unit), 0);
     
     return {
       ...purchase,
-      calculated_total: calculated || purchase.total_amount || purchase.total_cost || 0
+      calculated_total: calculated || purchase.total_cost || 0
     };
   }));
 

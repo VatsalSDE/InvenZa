@@ -72,3 +72,12 @@ export const getSupplierPaymentsByPurchase = async (req, res, next) => {
         next(error);
     }
 };
+
+export const getSupplierPaymentsBySupplier = async (req, res, next) => {
+    try {
+        const payments = await supplierPaymentsService.getAllSupplierPayments({ supplier_id: req.params.supplierId });
+        return sendSuccess(res, payments);
+    } catch (error) {
+        next(error);
+    }
+};

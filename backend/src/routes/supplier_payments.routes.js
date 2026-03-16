@@ -20,5 +20,6 @@ router.put('/:id', supplierPaymentsController.updateSupplierPayment);
 router.delete('/:id', supplierPaymentsController.deleteSupplierPayment);
 
 router.get('/purchase/:purchaseId', supplierPaymentsController.getSupplierPaymentsByPurchase);
+router.get('/supplier/:supplierId', supplierPaymentsController.getSupplierPaymentsBySupplier);
 
 export default router;
