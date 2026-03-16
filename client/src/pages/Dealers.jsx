@@ -1,530 +1,458 @@
 import React, { useState, useEffect } from "react";
 import {
-  X, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Users,
-  TrendingUp, DollarSign, Calendar, Receipt, ShoppingCart, CreditCard, AlertCircle
+  X, Plus, Search, Edit, Users, TrendingUp, CreditCard, ShoppingCart, Phone, Mail, MapPin,
+  Archive, RotateCcw, Download, Share2, Eye, Calendar, Trash2
 } from "lucide-react";
-import { dealersAPI, ordersAPI, paymentsAPI } from "../services/api";
-import { Table, Grid3X3 } from "lucide-react";
-import DealersTable from "../components/dealers/DealersTable";
+import { dealersAPI, ordersAPI, paymentsAPI, archiveAPI } from "../services/api";
+import PageHeader from "../components/ims/PageHeader";
+import OrbitalLoader from "../components/ui/OrbitalLoader";
+import StatsCard from "../components/ims/StatsCard";
+import StatusBadge from "../components/ui/StatusBadge";
+import DealerTopProducts from "../components/ims/DealerTopProducts";
+import jsPDF from "jspdf";
 
 const Dealers = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showLedger, setShowLedger] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [dealers, setDealers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [paymentScores, setPaymentScores] = useState({});
   const [loading, setLoading] = useState(true);
   const [editingDealer, setEditingDealer] = useState(null);
   const [selectedDealer, setSelectedDealer] = useState(null);
-  const [viewMode, setViewMode] = useState("grid");
-  const [formData, setFormData] = useState({
-    firm_name: "", person_name: "", address: "", mobile_number: "", email: "", gstin: ""
-  });
+  const [drawerTab, setDrawerTab] = useState("orders");
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedIds, setArchivedIds] = useState([]);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [formData, setFormData] = useState({ firm_name: "", person_name: "", address: "", mobile_number: "", email: "", gstin: "" });
 
-  useEffect(() => {
-    loadDealers();
-  }, []);
+  const [ledgerFrom, setLedgerFrom] = useState(() => `2024-01-01`);
+  const [ledgerTo, setLedgerTo] = useState(() => new Date().toLocaleDateString('en-CA'));
+
+  useEffect(() => { loadDealers(); }, []);
 
   const loadDealers = async () => {
     try {
       setLoading(true);
-      const [dealersData, ordersData, paymentsData] = await Promise.all([
-        dealersAPI.getAll(), ordersAPI.getAll(), paymentsAPI.getAll()
-      ]);
-      setDealers(dealersData);
-      setOrders(ordersData);
-      setPayments(paymentsData);
-    } catch (err) {
-      console.error('Failed to load data:', err);
-    } finally {
-      setLoading(false);
-    }
+      const [d, o, p, scores] = await Promise.all([dealersAPI.getAll(), ordersAPI.getAll(), paymentsAPI.getAll(), dealersAPI.getPaymentScores()]);
+      setDealers(d.data?.data || d.data || d || []);
+      setOrders(o.data?.data || o.data || o || []);
+      setPayments(p.data?.data || p.data || p || []);
+
+      const scoresMap = {};
+      (scores || []).forEach(s => scoresMap[s.dealer_id] = s);
+      setPaymentScores(scoresMap);
+
+      setArchivedIds(archiveAPI.getArchivedDealers());
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   const generateDealerCode = (firmName) => {
-    const prefix = firmName.split(" ").map((word) => word.substring(0, 3)).join("").toUpperCase();
-    const existingCodes = dealers.filter(d => d.dealer_code && d.dealer_code.startsWith(prefix)).map(d => d.dealer_code);
-    let sequenceNumber = 1;
-    while (existingCodes.includes(`${prefix}-${String(sequenceNumber).padStart(3, "0")}`)) {
-      sequenceNumber++;
-    }
-    return `${prefix}-${String(sequenceNumber).padStart(3, "0")}`;
+    const prefix = firmName.split(" ").map(w => w.substring(0, 3)).join("").toUpperCase();
+    const existing = dealers.filter(d => d.dealer_code?.startsWith(prefix)).map(d => d.dealer_code);
+    let seq = 1;
+    while (existing.includes(`${prefix}-${String(seq).padStart(3, "0")}`)) seq++;
+    return `${prefix}-${String(seq).padStart(3, "0")}`;
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const resetForm = () => {
-    setFormData({ firm_name: "", person_name: "", address: "", mobile_number: "", email: "", gstin: "" });
-  };
+  const resetForm = () => setFormData({ firm_name: "", person_name: "", address: "", mobile_number: "", email: "", gstin: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const dealerCode = generateDealerCode(formData.firm_name);
-      const newDealer = { ...formData, dealer_code: dealerCode };
-      await dealersAPI.create(newDealer);
-      await loadDealers();
-      resetForm();
-      setShowAddForm(false);
-    } catch (err) {
-      console.error('Failed to create dealer:', err);
-    }
+    await dealersAPI.create({ ...formData, dealer_code: generateDealerCode(formData.firm_name) });
+    await loadDealers(); resetForm(); setShowAddForm(false);
   };
 
-  const handleEdit = (dealer) => {
-    setEditingDealer(dealer);
-    setFormData({
-      firm_name: dealer.firm_name || "",
-      person_name: dealer.person_name || "",
-      address: dealer.address || "",
-      mobile_number: dealer.mobile_number || "",
-      email: dealer.email || "",
-      gstin: dealer.gstin || ""
-    });
+  const handleEdit = (d) => {
+    setEditingDealer(d);
+    setFormData({ firm_name: d.firm_name || "", person_name: d.person_name || "", address: d.address || "", mobile_number: d.mobile_number || "", email: d.email || "", gstin: d.gstin || "" });
     setShowEditForm(true);
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    try {
-      await dealersAPI.update(editingDealer.dealer_id, formData);
-      await loadDealers();
-      resetForm();
-      setShowEditForm(false);
-      setEditingDealer(null);
-    } catch (err) {
-      console.error('Failed to update dealer:', err);
-    }
+    await dealersAPI.update(editingDealer.dealer_id, formData);
+    await loadDealers(); resetForm(); setShowEditForm(false); setEditingDealer(null);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this dealer?')) {
-      try {
-        await dealersAPI.delete(id);
-        await loadDealers();
-      } catch (err) {
-        console.error('Failed to delete dealer:', err);
-      }
-    }
+  const handleArchive = async (id) => { await archiveAPI.archiveDealer(id); setShowArchiveConfirm(null); setArchivedIds(archiveAPI.getArchivedDealers()); };
+  const handleRestore = async (id) => { await archiveAPI.restoreDealer(id); setArchivedIds(archiveAPI.getArchivedDealers()); };
+  const handleDelete = async (id) => { await dealersAPI.delete(id); setShowDeleteConfirm(null); await loadDealers(); };
+
+  const openDrawer = (d) => { setSelectedDealer(d); setDrawerTab("orders"); setShowDrawer(true); };
+
+  const getDealerOrders = (id) => orders.filter(o => o.dealer_id === id);
+  const getDealerPayments = (id) => payments.filter(p => p.dealer_id === id);
+
+  const calculateBalance = (id) => {
+    const to = getDealerOrders(id).reduce((s, o) => s + (parseFloat(o.total_amount) || 0), 0);
+    const tp = getDealerPayments(id)
+      .filter(p => ['Completed', 'success', 'paid'].includes(p.payment_status))
+      .reduce((s, p) => s + (parseFloat(p.paid_amount) || 0), 0);
+    return { totalOrders: to, totalPayments: tp, remaining: to - tp };
   };
 
-  const openLedger = (dealer) => {
-    setSelectedDealer(dealer);
-    setShowLedger(true);
+  const formatCurrency = (a) => `₹${Number(a || 0).toLocaleString("en-IN")}`;
+
+  const buildLedger = (id) => {
+    const entries = [];
+    getDealerOrders(id).forEach(o => {
+      const date = (o.created_at || "").slice(0, 10);
+      if (date >= ledgerFrom && date <= ledgerTo) entries.push({ date, desc: `Order #${o.order_code}`, type: "DEBIT", debit: parseFloat(o.total_amount) || 0, credit: 0 });
+    });
+    getDealerPayments(id).filter(p => ['Completed', 'success', 'paid', 'Completed '].includes(p.payment_status)).forEach(p => {
+      const date = (p.payment_date || "").slice(0, 10);
+      if (date >= ledgerFrom && date <= ledgerTo) entries.push({ date, desc: `Payment - ${p.payment_method || p.method || 'N/A'}`, type: "CREDIT", debit: 0, credit: parseFloat(p.paid_amount) || 0 });
+    });
+    entries.sort((a, b) => a.date.localeCompare(b.date));
+    let bal = 0;
+    entries.forEach(e => { bal += e.debit - e.credit; e.runBal = bal; });
+    return entries;
   };
 
-  const getDealerOrders = (dealerId) => orders.filter(order => order.dealer_id === dealerId);
-  const getDealerPayments = (dealerId) => payments.filter(payment => payment.dealer_id === dealerId);
-
-  const calculateDealerBalance = (dealerId) => {
-    const dealerOrders = getDealerOrders(dealerId);
-    const dealerPayments = getDealerPayments(dealerId);
-    const totalOrders = dealerOrders.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
-    const totalPayments = dealerPayments.reduce((sum, payment) => sum + (parseFloat(payment.paid_amount) || 0), 0);
-    return { totalOrders, totalPayments, remainingBalance: totalOrders - totalPayments };
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2 }).format(amount);
-  };
-
-  const filteredDealers = dealers.filter((dealer) => {
-    const matchesSearch = dealer.firm_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dealer.person_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         dealer.address?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+  const filtered = dealers.filter(d => {
+    const match = (d.firm_name || "").toLowerCase().includes(searchTerm.toLowerCase()) || (d.person_name || "").toLowerCase().includes(searchTerm.toLowerCase());
+    const isA = archivedIds.includes(d.dealer_id);
+    if (!showArchived && isA) return false;
+    return match;
   });
 
-  if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 p-6 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-lg">Loading dealers...</p>
-        </div>
-      </div>
-    );
+  const totalOutstanding = dealers.reduce((s, d) => s + Math.max(0, calculateBalance(d.dealer_id).remaining), 0);
+  const inp = "w-full px-3 py-2 bg-[#222222] border border-[#2A2A2A] text-white text-sm rounded-lg focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/30 placeholder:text-zinc-600";
+
+  if (loading) return <div className="min-h-screen bg-[#0F0F0F] p-6 flex items-center justify-center"><OrbitalLoader message="Loading dealers..." /></div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative">
-            <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center shadow-xl">
-              <Users className="w-8 h-8 text-white" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-xs font-bold">{dealers.length}</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-800 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
-              Dealers Management
-            </h1>
-            <p className="text-gray-600 mt-2 text-lg">
-              Manage your dealer network and track financial relationships
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#0F0F0F] p-6">
+      <PageHeader title="Dealers" subtitle="Manage your wholesale buyers" icon={Users} count={dealers.length}
+        action={<button onClick={() => { resetForm(); setShowAddForm(true); }} className="bg-green-500 hover:bg-green-600 text-black font-semibold px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition-all duration-100 active:scale-95 active:brightness-90 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-black"><Plus className="w-4 h-4" /> Add Dealer</button>}
+      />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatsCard title="Total Dealers" value={dealers.length} icon={Users} accentColor="blue" />
+        <StatsCard title="Active Dealers" value={dealers.filter(d => !archivedIds.includes(d.dealer_id)).length} icon={TrendingUp} accentColor="green" />
+        <StatsCard title="Outstanding Balance" value={formatCurrency(totalOutstanding)} icon={CreditCard} accentColor="red" />
+        <StatsCard title="Total Orders" value={orders.length} icon={ShoppingCart} accentColor="purple" />
       </div>
 
-      {/* Top Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Dealers</p>
-              <p className="text-2xl font-bold text-gray-800">{dealers.length}</p>
-            </div>
-          </div>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-6">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 w-4 h-4" />
+          <input type="text" placeholder="Search dealers..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className={`${inp} pl-10`} />
         </div>
-
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Dealers</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {dealers.filter(d => d.status !== 'inactive').length}
-              </p>
-            </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <div className="relative"><input type="checkbox" className="sr-only peer" checked={showArchived} onChange={() => setShowArchived(!showArchived)} />
+            <div className="w-9 h-5 bg-[#2A2A2A] peer-checked:bg-green-500 rounded-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-zinc-400 peer-checked:after:bg-black after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
           </div>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-              <ShoppingCart className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-800">{orders.length}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/50">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-              <CreditCard className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Payments</p>
-              <p className="text-2xl font-bold text-gray-800">{payments.length}</p>
-            </div>
-          </div>
-        </div>
+          <span className="text-xs text-zinc-500">Show Archived</span>
+        </label>
       </div>
 
-      {/* Controls */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-6 mb-8">
-        <div className="flex flex-col lg:flex-row gap-4 items-center">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search dealers by name, firm, or contact..."
-              className="w-full pl-12 pr-4 py-4 bg-gray-50/80 border border-gray-200/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-300 text-gray-700 placeholder-gray-400 text-lg"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white px-8 py-4 rounded-2xl hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 text-lg font-semibold"
-            >
-              <Plus className="w-6 h-6" />
-              Add Dealer
-            </button>
-        </div>
-      </div>
-
-      {/* View Controls */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-4 mb-6 flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          {filteredDealers.length} of {dealers.length} dealers
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode("table")}
-            className={`px-3 py-2 rounded-lg ${viewMode === 'table' ? 'bg-white text-cyan-600 shadow' : 'bg-gray-100 text-gray-600'}`}
-            title="Table view"
-          >
-            <Table className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setViewMode("grid")}
-            className={`px-3 py-2 rounded-lg ${viewMode === 'grid' ? 'bg-white text-cyan-600 shadow' : 'bg-gray-100 text-gray-600'}`}
-            title="Grid view"
-          >
-            <Grid3X3 className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {viewMode === 'table' ? (
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden">
-          <DealersTable dealers={filteredDealers} calculateDealerBalance={calculateDealerBalance} formatCurrency={formatCurrency} />
-        </div>
-      ) : (
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {filteredDealers.map((dealer) => {
-          const balance = calculateDealerBalance(dealer.dealer_id);
-          return (
-            <div key={dealer.dealer_id} className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden hover:shadow-2xl transition-all duration-300">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 p-6 text-white">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-white/20 rounded-2xl border-3 border-white shadow-xl flex items-center justify-center">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold">{dealer.firm_name}</h3>
-                    <p className="text-blue-100 text-lg">{dealer.person_name}</p>
-                    <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium mt-2 inline-block">
-                        {dealer.dealer_code}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-              {/* Content */}
-            <div className="p-6">
-                <div className="mb-4 p-3 bg-gray-50 rounded">
-                  <p className="text-sm font-medium">Balance: {formatCurrency(balance.remainingBalance)}</p>
-                  <p className="text-xs text-gray-500">
-                    Orders: {formatCurrency(balance.totalOrders)} | Payments: {formatCurrency(balance.totalPayments)}
-                  </p>
-              </div>
-
-                <div className="flex gap-2">
-                  <button onClick={() => openLedger(dealer)} className="flex-1 bg-purple-500 text-white py-2 px-4 rounded text-sm">
-                    View Ledger
-                  </button>
-                  <button onClick={() => handleEdit(dealer)} className="flex-1 bg-blue-500 text-white py-2 px-4 rounded text-sm">
-                    Edit
-                </button>
-                  <button onClick={() => handleDelete(dealer.dealer_id)} className="flex-1 bg-red-500 text-white py-2 px-4 rounded text-sm">
-                  Remove
-                </button>
-              </div>
-            </div>
-          </div>
-          );
-        })}
-      </div>
-      )}
-
-      {/* Add Dealer Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6">
-            <div className="bg-gradient-to-r from-cyan-500 to-blue-500 p-6 text-white rounded-t-3xl -m-6 mb-6">
-              <h2 className="text-2xl font-bold">Add New Dealer</h2>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <input type="text" name="firm_name" placeholder="Firm Name *" value={formData.firm_name} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="text" name="person_name" placeholder="Contact Person *" value={formData.person_name} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="tel" name="mobile_number" placeholder="Mobile Number *" value={formData.mobile_number} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="email" name="email" placeholder="Email *" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="text" name="gstin" placeholder="GST Number (optional)" value={formData.gstin} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-              <textarea name="address" placeholder="Business Address *" value={formData.address} onChange={handleInputChange} rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              
-              {formData.firm_name && (
-                <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                  <p className="text-sm text-blue-700">Generated Code: <strong>{generateDealerCode(formData.firm_name)}</strong></p>
-                </div>
-              )}
-
-              <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowAddForm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
-                  Cancel
-                </button>
-                <button type="submit" className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                  Add Dealer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Dealer Modal */}
-      {showEditForm && editingDealer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6">
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-500 p-6 text-white rounded-t-3xl -m-6 mb-6">
-              <h2 className="text-2xl font-bold">Edit Dealer</h2>
-            </div>
-            
-            <form onSubmit={handleUpdate} className="space-y-4">
-              <input type="text" name="firm_name" placeholder="Firm Name *" value={formData.firm_name} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="text" name="person_name" placeholder="Contact Person *" value={formData.person_name} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="tel" name="mobile_number" placeholder="Mobile Number *" value={formData.mobile_number} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="email" name="email" placeholder="Email *" value={formData.email} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              <input type="text" name="gstin" placeholder="GST Number (optional)" value={formData.gstin} onChange={handleInputChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
-              <textarea name="address" placeholder="Business Address *" value={formData.address} onChange={handleInputChange} rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
-              
-              <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setShowEditForm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
-                  Cancel
-                </button>
-                <button type="submit" className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-                  Update Dealer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Dealer Ledger Modal with Table Format */}
-      {showLedger && selectedDealer && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white rounded-t-3xl">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Dealer Ledger - {selectedDealer.firm_name}</h2>
-                <button onClick={() => setShowLedger(false)} className="text-white">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {(() => {
-                  const balance = calculateDealerBalance(selectedDealer.dealer_id);
-                  return (
-                    <>
-                      <div className="bg-blue-50 p-4 rounded text-center border border-blue-200">
-                        <p className="text-2xl font-bold text-blue-600">{formatCurrency(balance.totalOrders)}</p>
-                        <p className="text-sm text-blue-500">Total Orders</p>
+      {/* Dealers Table */}
+      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-[#2A2A2A]">
+              <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Dealer</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider hidden lg:table-cell">GSTIN</th>
+              <th className="text-left py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider hidden md:table-cell">Mobile</th>
+              <th className="text-center py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Payment Score</th>
+              <th className="text-right py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Outstanding</th>
+              <th className="text-right py-3 px-4 text-xs font-medium text-zinc-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan="5" className="py-12 text-center text-zinc-600 text-sm">No dealers found</td></tr>
+            ) : (
+              filtered.map(d => {
+                const bal = calculateBalance(d.dealer_id);
+                const isA = archivedIds.includes(d.dealer_id);
+                return (
+                  <tr key={d.dealer_id} className={`border-b border-[#1F1F1F] hover:bg-white/[0.02] ${isA ? 'opacity-50' : ''}`}>
+                    <td className="py-3 px-4">
+                      <p className="text-sm font-medium text-white">{d.firm_name}</p>
+                      <p className="text-xs text-zinc-500">{d.person_name}</p>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-zinc-400 hidden lg:table-cell">{d.gstin || '—'}</td>
+                    <td className="py-3 px-4 text-sm text-zinc-400 hidden md:table-cell">{d.mobile_number}</td>
+                    <td className="py-3 px-4 text-center">
+                      {paymentScores[d.dealer_id] && paymentScores[d.dealer_id].score !== null ? (
+                        <span className={`inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-medium border ${paymentScores[d.dealer_id].score >= 85 ? 'bg-green-500/15 text-green-400 border-green-500/20' :
+                          paymentScores[d.dealer_id].score >= 50 ? 'bg-yellow-500/15 text-yellow-500 border-yellow-500/20' :
+                            'bg-red-500/15 text-red-400 border-red-500/20'
+                          }`}>
+                          {paymentScores[d.dealer_id].score} — {paymentScores[d.dealer_id].score_label}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-zinc-600">Unrated</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <span className={`text-sm font-medium ${bal.remaining > 0 ? 'text-red-400' : 'text-green-400'}`}>{formatCurrency(Math.abs(bal.remaining))}</span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => openDrawer(d)} className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-100 active:scale-95 active:brightness-90"><Eye className="w-4 h-4" /></button>
+                        <button onClick={() => handleEdit(d)} className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-100 active:scale-95 active:brightness-90"><Edit className="w-4 h-4" /></button>
+                        {isA ? (
+                          <button onClick={() => handleRestore(d.dealer_id)} className="p-1.5 rounded-lg text-green-400 hover:bg-green-500/10 transition-all duration-100 active:scale-95 active:brightness-90"><RotateCcw className="w-4 h-4" /></button>
+                        ) : (
+                          <button onClick={() => setShowArchiveConfirm(d)} className="p-1.5 rounded-lg text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 transition-all duration-100 active:scale-95 active:brightness-90"><Archive className="w-4 h-4" /></button>
+                        )}
+                        <button onClick={() => setShowDeleteConfirm(d)} className="p-1.5 rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-100 active:scale-95 active:brightness-90"><Trash2 className="w-4 h-4" /></button>
                       </div>
-                      <div className="bg-green-50 p-4 rounded text-center border border-green-200">
-                        <p className="text-2xl font-bold text-green-600">{formatCurrency(balance.totalPayments)}</p>
-                        <p className="text-sm text-green-500">Total Payments</p>
-              </div>
-                      <div className="bg-red-50 p-4 rounded text-center border border-red-200">
-                        <p className="text-2xl font-bold text-red-600">{formatCurrency(Math.abs(balance.remainingBalance))}</p>
-                        <p className="text-sm text-red-500">{balance.remainingBalance > 0 ? 'Outstanding' : 'Advance'}</p>
-              </div>
-                    </>
-                  );
-                })()}
-                </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
-              {/* Orders and Payments Tables in Row-Column Format */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Orders Table */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5 text-blue-600" />
-                    Orders History
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-2 text-sm font-semibold text-gray-600">Order Code</th>
-                          <th className="text-left py-2 px-2 text-sm font-semibold text-gray-600">Date</th>
-                          <th className="text-left py-2 px-2 text-sm font-semibold text-gray-600">Status</th>
-                          <th className="text-right py-2 px-2 text-sm font-semibold text-gray-600">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {getDealerOrders(selectedDealer.dealer_id).map((order) => (
-                          <tr key={order.order_id} className="border-b border-gray-100 hover:bg-gray-100">
-                            <td className="py-2 px-2 text-sm text-gray-800 font-medium">{order.order_code}</td>
-                            <td className="py-2 px-2 text-sm text-gray-600">{new Date(order.created_at).toLocaleDateString()}</td>
-                            <td className="py-2 px-2">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                order.order_status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {order.order_status}
-                              </span>
-                            </td>
-                            <td className="py-2 px-2 text-sm text-gray-800 font-semibold text-right">{formatCurrency(order.total_amount)}</td>
-                          </tr>
-                        ))}
-                        {getDealerOrders(selectedDealer.dealer_id).length === 0 && (
-                          <tr><td colSpan="4" className="py-4 text-center text-gray-500">No orders found</td></tr>
-                        )}
-                      </tbody>
-                    </table>
-                </div>
-              </div>
+      {/* Right Drawer */}
+      {showDrawer && selectedDealer && (() => {
+        const bal = calculateBalance(selectedDealer.dealer_id);
+        const entries = buildLedger(selectedDealer.dealer_id);
+        const totalDebits = entries.reduce((s, e) => s + e.debit, 0);
+        const totalCredits = entries.reduce((s, e) => s + e.credit, 0);
+        const netBal = totalDebits - totalCredits;
+        const whatsNum = (selectedDealer.mobile_number || '').replace(/[\s\-()]/g, '').replace(/^0+/, '');
+        const whatsPhone = whatsNum.startsWith('91') ? whatsNum : `91${whatsNum}`;
+        const whatsMsg = encodeURIComponent(`Ledger: ${selectedDealer.firm_name}\n${ledgerFrom} to ${ledgerTo}\nBilled: ${formatCurrency(totalDebits)}\nPaid: ${formatCurrency(totalCredits)}\nBalance: ${formatCurrency(netBal)}`);
 
-                {/* Payments Table */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-green-600" />
-                    Payment History
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-2 text-sm font-semibold text-gray-600">Transaction ID</th>
-                          <th className="text-left py-2 px-2 text-sm font-semibold text-gray-600">Date</th>
-                          <th className="text-left py-2 px-2 text-sm font-semibold text-gray-600">Method</th>
-                          <th className="text-right py-2 px-2 text-sm font-semibold text-gray-600">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {getDealerPayments(selectedDealer.dealer_id).map((payment) => (
-                          <tr key={payment.payment_id} className="border-b border-gray-100 hover:bg-gray-100">
-                            <td className="py-2 px-2 text-sm text-gray-800 font-medium">{payment.transaction_id}</td>
-                            <td className="py-2 px-2 text-sm text-gray-600">{new Date(payment.payment_date).toLocaleDateString()}</td>
-                            <td className="py-2 px-2">
-                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {payment.payment_method}
-                              </span>
-                            </td>
-                            <td className="py-2 px-2 text-sm text-gray-800 font-semibold text-right">{formatCurrency(payment.paid_amount)}</td>
-                          </tr>
-                        ))}
-                        {getDealerPayments(selectedDealer.dealer_id).length === 0 && (
-                          <tr><td colSpan="4" className="py-4 text-center text-gray-500">No payments found</td></tr>
-                        )}
-                      </tbody>
-                    </table>
+        const handleDownloadPDF = () => {
+          const doc = new jsPDF();
+          const pageWidth = doc.internal.pageSize.getWidth();
+
+          // Header
+          doc.setFontSize(18);
+          doc.setFont(undefined, 'bold');
+          doc.text(selectedDealer.firm_name || 'Dealer Ledger', 14, 20);
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'normal');
+          doc.text(`Contact: ${selectedDealer.person_name || ''}`, 14, 28);
+          if (selectedDealer.mobile_number) doc.text(`Mobile: ${selectedDealer.mobile_number}`, 14, 34);
+          if (selectedDealer.gstin) doc.text(`GSTIN: ${selectedDealer.gstin}`, 14, 40);
+          if (selectedDealer.address) doc.text(`Address: ${selectedDealer.address}`, 14, 46);
+
+          doc.setFontSize(12);
+          doc.setFont(undefined, 'bold');
+          doc.text(`Ledger: ${ledgerFrom} to ${ledgerTo}`, 14, 58);
+
+          // Table header
+          let y = 68;
+          doc.setFontSize(9);
+          doc.setFont(undefined, 'bold');
+          doc.setFillColor(240, 240, 240);
+          doc.rect(14, y - 5, pageWidth - 28, 8, 'F');
+          doc.text('Date', 16, y);
+          doc.text('Description', 46, y);
+          doc.text('Type', 110, y);
+          doc.text('Amount', 135, y);
+          doc.text('Balance', 165, y);
+          y += 8;
+
+          // Table rows
+          doc.setFont(undefined, 'normal');
+          doc.setFontSize(8);
+          entries.forEach((e) => {
+            if (y > 270) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(e.date || '', 16, y);
+            doc.text(e.desc || '', 46, y);
+            doc.text(e.type, 110, y);
+            const amount = e.debit > 0 ? e.debit : e.credit;
+            doc.text(`Rs ${Number(amount).toLocaleString('en-IN')}`, 135, y);
+            doc.text(`Rs ${Number(Math.abs(e.runBal)).toLocaleString('en-IN')}`, 165, y);
+            y += 6;
+          });
+
+          // Summary
+          y += 8;
+          if (y > 260) { doc.addPage(); y = 20; }
+          doc.setFontSize(10);
+          doc.setFont(undefined, 'bold');
+          doc.text(`Total Billed: Rs ${Number(totalDebits).toLocaleString('en-IN')}`, 14, y);
+          y += 7;
+          doc.text(`Total Paid: Rs ${Number(totalCredits).toLocaleString('en-IN')}`, 14, y);
+          y += 7;
+          doc.text(`Outstanding: Rs ${Number(Math.abs(netBal)).toLocaleString('en-IN')}`, 14, y);
+
+          doc.save(`Ledger_${selectedDealer.firm_name}_${ledgerFrom}_to_${ledgerTo}.pdf`);
+        };
+
+        return (
+          <>
+            <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setShowDrawer(false)} />
+            <div className="fixed top-0 right-0 h-full w-full max-w-[520px] bg-[#1A1A1A] border-l border-[#2A2A2A] z-50 overflow-y-auto animate-slide-in-right">
+              <div className="p-6 border-b border-[#2A2A2A]">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">{selectedDealer.firm_name}</h2>
+                    <p className="text-sm text-zinc-500">{selectedDealer.person_name}</p>
                   </div>
-              </div>
+                  <button onClick={() => setShowDrawer(false)} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-100 active:scale-95"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="flex flex-wrap gap-3 text-xs text-zinc-400 mb-3">
+                  {selectedDealer.mobile_number && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {selectedDealer.mobile_number}</span>}
+                  {selectedDealer.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {selectedDealer.email}</span>}
+                  {selectedDealer.address && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {selectedDealer.address}</span>}
+                </div>
+                {selectedDealer.gstin && <p className="text-xs text-zinc-600">GST: <span className="text-zinc-400">{selectedDealer.gstin}</span></p>}
+                <div className={`mt-3 text-lg font-bold ${bal.remaining > 0 ? 'text-red-400' : 'text-green-400'}`}>{formatCurrency(Math.abs(bal.remaining))} <span className="text-xs font-normal text-zinc-500">outstanding</span></div>
+
+                {/* Dealer Product Intelligence (Step 3) */}
+                <DealerTopProducts dealerId={selectedDealer.dealer_id} />
               </div>
 
-              {/* Summary Footer */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="text-center">
-                  <h4 className="text-lg font-semibold text-gray-800 mb-2">Financial Summary</h4>
-                  <p className="text-gray-600">
-                    {(() => {
-                      const balance = calculateDealerBalance(selectedDealer.dealer_id);
-                      if (balance.remainingBalance > 0) {
-                        return `Outstanding Balance: ${formatCurrency(balance.remainingBalance)}`;
-                      } else if (balance.remainingBalance < 0) {
-                        return `Advance Payment: ${formatCurrency(Math.abs(balance.remainingBalance))}`;
-                      } else {
-                        return 'All payments are settled';
-                      }
-                    })()}
-                  </p>
-                  </div>
-                </div>
+              {/* Tabs */}
+              <div className="flex border-b border-[#2A2A2A]">
+                {["orders", "payments", "ledger"].map(tab => (
+                  <button key={tab} onClick={() => setDrawerTab(tab)}
+                    className={`flex-1 py-3 text-sm font-medium capitalize transition-colors ${drawerTab === tab ? 'text-green-400 border-b-2 border-green-500' : 'text-zinc-500 hover:text-white'}`}>{tab}</button>
+                ))}
               </div>
+
+              <div className="p-6">
+                {drawerTab === "orders" && (
+                  <div className="space-y-2">
+                    {getDealerOrders(selectedDealer.dealer_id).length === 0 ? <p className="text-zinc-600 text-sm text-center py-6">No orders</p> : (
+                      getDealerOrders(selectedDealer.dealer_id).map((o, i) => (
+                        <div key={i} className="bg-[#222222] border border-[#2A2A2A] rounded-xl p-3 flex justify-between items-center">
+                          <div><p className="text-sm text-white font-medium">{o.order_code}</p><p className="text-xs text-zinc-500">{(o.created_at || "").split("T")[0]}</p></div>
+                          <div className="text-right"><p className="text-sm font-medium text-green-400">{formatCurrency(o.total_amount)}</p></div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {drawerTab === "payments" && (
+                  <div className="space-y-2">
+                    {getDealerPayments(selectedDealer.dealer_id).length === 0 ? <p className="text-zinc-600 text-sm text-center py-6">No payments</p> : (
+                      getDealerPayments(selectedDealer.dealer_id).map((p, i) => (
+                        <div key={i} className="bg-[#222222] border border-[#2A2A2A] rounded-xl p-3 flex justify-between items-center">
+                          <div><p className="text-sm text-white font-medium">{formatCurrency(p.paid_amount)}</p><p className="text-xs text-zinc-500">{p.payment_date}</p></div>
+                          <div className="text-right text-xs text-zinc-500">{p.payment_method || p.method || "N/A"}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {drawerTab === "ledger" && (
+                  <div>
+                    <div className="flex gap-2 mb-4 items-end">
+                      <div className="flex-1"><label className="text-xs text-zinc-500 mb-1 block">From</label><input type="date" value={ledgerFrom} onChange={e => setLedgerFrom(e.target.value)} className={inp} /></div>
+                      <div className="flex-1"><label className="text-xs text-zinc-500 mb-1 block">To</label><input type="date" value={ledgerTo} onChange={e => setLedgerTo(e.target.value)} className={inp} /></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center"><p className="text-lg font-bold text-red-400">{formatCurrency(totalDebits)}</p><p className="text-xs text-red-400/60">Billed</p></div>
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center"><p className="text-lg font-bold text-green-400">{formatCurrency(totalCredits)}</p><p className="text-xs text-green-400/60">Paid</p></div>
+                    </div>
+
+                    <div className="bg-[#222222] border border-[#2A2A2A] rounded-xl overflow-hidden mb-4">
+                      <table className="w-full">
+                        <thead><tr className="border-b border-[#2A2A2A]">
+                          <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase">Date</th>
+                          <th className="text-left py-2 px-3 text-[10px] text-zinc-500 uppercase">Description</th>
+                          <th className="text-center py-2 px-3 text-[10px] text-zinc-500 uppercase">Type</th>
+                          <th className="text-right py-2 px-3 text-[10px] text-zinc-500 uppercase">Amount</th>
+                          <th className="text-right py-2 px-3 text-[10px] text-zinc-500 uppercase">Balance</th>
+                        </tr></thead>
+                        <tbody>
+                          {entries.length === 0 ? <tr><td colSpan="5" className="py-6 text-center text-zinc-600 text-xs">No transactions</td></tr> : (
+                            entries.map((e, i) => (
+                              <tr key={i} className="border-b border-[#1F1F1F]">
+                                <td className="py-2 px-3 text-xs text-zinc-400">{e.date}</td>
+                                <td className="py-2 px-3 text-xs text-zinc-300">{e.desc}</td>
+                                <td className="py-2 px-3 text-center"><StatusBadge status={e.type} /></td>
+                                <td className="py-2 px-3 text-xs text-right text-zinc-300">{e.debit > 0 ? formatCurrency(e.debit) : formatCurrency(e.credit)}</td>
+                                <td className={`py-2 px-3 text-xs text-right font-medium ${e.runBal > 0 ? 'text-red-400' : 'text-green-400'}`}>{formatCurrency(Math.abs(e.runBal))}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button onClick={handleDownloadPDF} className="flex-1 px-3 py-2 rounded-lg border border-zinc-700 text-zinc-300 text-xs font-medium hover:bg-white/5 flex items-center justify-center gap-1 transition-all duration-100 active:scale-95 active:brightness-90"><Download className="w-3 h-3" /> Download PDF</button>
+                      <a href={`https://wa.me/${whatsPhone}?text=${whatsMsg}`} target="_blank" rel="noopener noreferrer" className="flex-1 px-3 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-black text-xs font-semibold flex items-center justify-center gap-1 transition-all duration-100 active:scale-95 active:brightness-90 focus:outline-none focus:ring-2 focus:ring-green-500"><Share2 className="w-3 h-3" /> WhatsApp</a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* Archive Confirm */}
+      {showArchiveConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-white mb-2">Archive dealer?</h3>
+            <p className="text-sm text-zinc-400 mb-6">Hidden from list but all orders and bills remain safe.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowArchiveConfirm(null)} className="flex-1 px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 text-sm hover:bg-white/5">Cancel</button>
+              <button onClick={() => handleArchive(showArchiveConfirm.dealer_id)} className="flex-1 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/20">Archive</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Dealer Modal */}
+      {(showAddForm || (showEditForm && editingDealer)) && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl max-w-lg w-full">
+            <div className="flex items-center justify-between p-6 border-b border-[#2A2A2A]">
+              <h2 className="text-lg font-semibold text-white">{editingDealer ? 'Edit Dealer' : 'Add New Dealer'}</h2>
+              <button onClick={() => { setShowAddForm(false); setShowEditForm(false); setEditingDealer(null); resetForm(); }} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={editingDealer ? handleUpdate : handleSubmit} className="p-6 space-y-3">
+              <input type="text" name="firm_name" placeholder="Firm Name *" value={formData.firm_name} onChange={e => setFormData({ ...formData, firm_name: e.target.value })} className={inp} required />
+              <input type="text" name="person_name" placeholder="Contact Person *" value={formData.person_name} onChange={e => setFormData({ ...formData, person_name: e.target.value })} className={inp} required />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="tel" name="mobile_number" placeholder="Mobile *" value={formData.mobile_number} onChange={e => setFormData({ ...formData, mobile_number: e.target.value })} className={inp} required />
+                <input type="email" name="email" placeholder="Email *" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className={inp} required />
+              </div>
+              <input type="text" name="gstin" placeholder="GSTIN (optional)" value={formData.gstin} onChange={e => setFormData({ ...formData, gstin: e.target.value })} className={inp} />
+              <textarea name="address" placeholder="Business Address *" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} rows="2" className={inp} required />
+              {formData.firm_name && !editingDealer && (
+                <p className="text-xs text-zinc-500">Code: <span className="text-zinc-300">{generateDealerCode(formData.firm_name)}</span></p>
+              )}
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => { setShowAddForm(false); setShowEditForm(false); setEditingDealer(null); resetForm(); }} className="flex-1 px-4 py-2 rounded-lg border border-zinc-700 text-zinc-300 text-sm hover:bg-white/5 transition-all duration-100 active:scale-95">Cancel</button>
+                <button type="submit" className="flex-1 px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-black font-semibold text-sm transition-all duration-100 active:scale-95 active:brightness-90 focus:outline-none focus:ring-2 focus:ring-emerald-500">{editingDealer ? 'Update' : 'Add Dealer'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-white mb-2">Permanently delete dealer?</h3>
+            <p className="text-sm text-zinc-400 mb-6">
+              This will permanently delete <span className="text-white font-medium">{showDeleteConfirm.firm_name}</span> and all associated orders and payments. This action cannot be undone. Consider archiving instead.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 px-4 py-2 rounded-lg border border-[#2A2A2A] text-white text-sm font-medium hover:bg-white/5 transition-all duration-100 active:scale-95">Cancel</button>
+              <button onClick={() => handleDelete(showDeleteConfirm.dealer_id)} className="flex-1 px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all duration-100 active:scale-95 active:brightness-90 focus:outline-none focus:ring-2 focus:ring-red-500">Delete Permanently</button>
+            </div>
           </div>
         </div>
       )}

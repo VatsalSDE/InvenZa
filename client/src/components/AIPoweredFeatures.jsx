@@ -1,169 +1,121 @@
-import React, { useState } from "react";
-import { Brain, Zap, Target, Lightbulb, TrendingUp, BarChart3, Activity, Package, Users, DollarSign, ShoppingCart, AlertTriangle } from "lucide-react";
+import React from "react";
+import { Brain, Sparkles, TrendingUp, BarChart3, Package, AlertTriangle } from "lucide-react";
 
 const AIPoweredFeatures = ({ salesData = [], lowStock = [], stats = null }) => {
-  const [activeFeature, setActiveFeature] = useState(0);
-
-  // Simple trend calculations from salesData
+  // Simple calculations from real data
   const totalSales = salesData.reduce((s, d) => s + (d.sales || 0), 0);
   const totalTarget = salesData.reduce((s, d) => s + (d.target || 0), 0);
-  const efficiency = totalTarget > 0 ? Math.min(100, Math.round((totalSales / totalTarget) * 100)) : 87;
+  const efficiency = totalTarget > 0 ? Math.min(100, Math.round((totalSales / totalTarget) * 100)) : 0;
 
-  // Recommendations from low stock
+  // Low stock recommendations
   const recommendations = (lowStock || []).slice(0, 3).map(p => ({
     product_name: p.product_name,
-    suggestion: `Increase ${p.product_name} stock by ${Math.max(5, (p.min_stock_level || 10) - (p.quantity || 0) + 10)} units`
+    quantity: p.quantity || 0,
+    min_stock: p.min_stock_level || 10
   }));
-
-  const features = [
-    {
-      icon: <Brain className="w-8 h-8" />,
-      title: "AI-Powered Analytics",
-      description: "Live trends based on your recent sales vs targets.",
-      stats: `${efficiency}% Efficiency`,
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      icon: <Zap className="w-8 h-8" />,
-      title: "Smart Automation",
-      description: "Auto-reorder suggestions based on low stock thresholds and recent velocity.",
-      stats: "24/7 Monitoring",
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      icon: <Target className="w-8 h-8" />,
-      title: "Predictive Insights",
-      description: "Identify surges and dips from recent performance to plan ahead.",
-      stats: "Real-time Data",
-      color: "from-green-500 to-emerald-500"
-    },
-    {
-      icon: <Lightbulb className="w-8 h-8" />,
-      title: "Intelligent Recommendations",
-      description: "Concrete actions to prevent stockouts on critical SKUs.",
-      stats: "Smart Suggestions",
-      color: "from-orange-500 to-red-500"
-    }
-  ];
 
   return (
     <div className="mb-8">
-      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 p-8">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <Brain className="w-6 h-6 text-white" />
+      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500/20 to-emerald-500/10 rounded-xl flex items-center justify-center">
+              <Brain className="w-5 h-5 text-green-400" />
             </div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              AI-Powered Features
-            </h2>
+            <div>
+              <h2 className="text-lg font-semibold text-white">AI-Powered Insights</h2>
+              <p className="text-xs text-zinc-500">Smart analytics coming soon</p>
+            </div>
           </div>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Experience the future of inventory management with cutting-edge artificial intelligence
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Feature Cards */}
-          <div className="space-y-6">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                onClick={() => setActiveFeature(index)}
-                className={`p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
-                  activeFeature === index
-                    ? `border-purple-300 bg-gradient-to-r ${feature.color} text-white shadow-lg`
-                    : 'border-gray-200 bg-gray-50/50 hover:border-purple-200 hover:bg-purple-50/50'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    activeFeature === index ? 'bg-white/20' : 'bg-white shadow-md'
-                  }`}>
-                    {feature.icon}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className={`font-bold text-lg mb-2 ${
-                      activeFeature === index ? 'text-white' : 'text-gray-800'
-                    }`}>
-                      {feature.title}
-                    </h3>
-                    <p className={`text-sm ${
-                      activeFeature === index ? 'text-purple-100' : 'text-gray-600'
-                    }`}>
-                      {feature.description}
-                    </p>
-                    <div className={`mt-3 inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                      activeFeature === index ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-600'
-                    }`}>
-                      {feature.stats}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Interactive Demo */}
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-2">AI Demo Dashboard</h3>
-              <p className="text-gray-600 text-sm">Interactive preview of AI capabilities</p>
-            </div>
-
-            <div className="space-y-4">
-              {/* Mock AI Stats */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-gray-200 text-center">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-gray-800">{efficiency}%</p>
-                  <p className="text-xs text-gray-500">Efficiency</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 text-center">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <BarChart3 className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-gray-800">24/7</p>
-                  <p className="text-xs text-gray-500">Monitoring</p>
-                </div>
-              </div>
-
-              {/* Mock AI Predictions */}
-              <div className="bg-white p-4 rounded-xl border border-gray-200">
-                <h4 className="font-semibold text-gray-800 mb-3">AI Predictions</h4>
-                <div className="space-y-2">
-                  {(stats ? [
-                    { name: 'Revenue vs Target', val: efficiency >= 100 ? '+5% over' : `-${100-efficiency}% under`, up: efficiency >= 100 },
-                    { name: 'Low Stock Items', val: String(stats.lowStockProducts), up: false },
-                    { name: 'Completed Orders', val: String(stats.completedOrders), up: true }
-                  ] : []).map((row, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">{row.name}</span>
-                      <span className={`${row.up ? 'text-green-600' : 'text-gray-700'} font-medium`}>{row.val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mock AI Recommendations */}
-              <div className="bg-white p-4 rounded-xl border border-gray-200">
-                <h4 className="font-semibold text-gray-800 mb-3">Smart Recommendations</h4>
-                <div className="space-y-2 text-sm">
-                  {recommendations.length > 0 ? recommendations.map((rec, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-gray-600">{rec.suggestion}</span>
-                    </div>
-                  )) : (
-                    <div className="text-gray-500">No critical recommendations right now.</div>
-                  )}
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full border border-green-500/20">
+            <Sparkles className="w-3 h-3 text-green-400" />
+            <span className="text-xs text-green-400">Preview</span>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Current Stats */}
+          <div className="bg-[#222222] rounded-xl p-4 border border-[#2A2A2A]">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4 text-green-400" />
+              <span className="text-sm font-medium text-white">Performance</span>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-zinc-500">Efficiency</span>
+                <span className="text-sm font-medium text-white">{efficiency}%</span>
+              </div>
+              <div className="w-full bg-[#2A2A2A] rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-green-500 to-emerald-400 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${efficiency}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-500">Total Sales</span>
+                <span className="text-green-400">₹{totalSales.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Low Stock Alerts */}
+          <div className="bg-[#222222] rounded-xl p-4 border border-[#2A2A2A]">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-orange-400" />
+              <span className="text-sm font-medium text-white">Stock Alerts</span>
+            </div>
+            {recommendations.length > 0 ? (
+              <div className="space-y-2">
+                {recommendations.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-400 truncate max-w-[120px]">{item.product_name}</span>
+                    <span className="text-orange-400">{item.quantity} left</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-500">All products well stocked</p>
+            )}
+          </div>
+
+          {/* Coming Soon */}
+          <div className="bg-[#222222] rounded-xl p-4 border border-[#2A2A2A] flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-emerald-500/10 rounded-full flex items-center justify-center mb-2">
+              <Sparkles className="w-6 h-6 text-green-400" />
+            </div>
+            <h3 className="text-sm font-medium text-white mb-1">AI Features Coming</h3>
+            <p className="text-xs text-zinc-500">
+              Predictive analytics, smart reordering, and sales forecasting
+            </p>
+          </div>
+        </div>
+
+        {/* Summary Stats */}
+        {stats && (
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-[#222222] rounded-lg p-3 border border-[#2A2A2A] text-center">
+              <Package className="w-4 h-4 text-green-400 mx-auto mb-1" />
+              <p className="text-lg font-semibold text-white">{stats.totalProducts || 0}</p>
+              <p className="text-xs text-zinc-500">Products</p>
+            </div>
+            <div className="bg-[#222222] rounded-lg p-3 border border-[#2A2A2A] text-center">
+              <BarChart3 className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+              <p className="text-lg font-semibold text-white">{stats.totalOrders || 0}</p>
+              <p className="text-xs text-zinc-500">Orders</p>
+            </div>
+            <div className="bg-[#222222] rounded-lg p-3 border border-[#2A2A2A] text-center">
+              <TrendingUp className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+              <p className="text-lg font-semibold text-white">{stats.completedOrders || 0}</p>
+              <p className="text-xs text-zinc-500">Completed</p>
+            </div>
+            <div className="bg-[#222222] rounded-lg p-3 border border-[#2A2A2A] text-center">
+              <AlertTriangle className="w-4 h-4 text-orange-400 mx-auto mb-1" />
+              <p className="text-lg font-semibold text-white">{stats.lowStockProducts || 0}</p>
+              <p className="text-xs text-zinc-500">Low Stock</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

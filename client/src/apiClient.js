@@ -2,7 +2,8 @@ import { API_BASE_URL } from './config';
 
 function getToken() {
   try {
-    return localStorage.getItem('auth_token') || '';
+    // Support both 'token' (new) and 'auth_token' (legacy) keys
+    return localStorage.getItem('token') || localStorage.getItem('auth_token') || '';
   } catch (_) {
     return '';
   }
@@ -24,10 +25,13 @@ export async function apiFetch(path, options = {}) {
   const response = await fetch(url, { ...options, headers });
 
   if (response.status === 401) {
-    // Unauthorized: clear token and redirect to login
-    try { localStorage.removeItem('auth_token'); } catch (_) {}
-    if (window.location.pathname !== '/auth/login') {
-      window.location.href = '/auth/login';
+    // Unauthorized: clear tokens and redirect to login
+    try { 
+      localStorage.removeItem('token'); 
+      localStorage.removeItem('auth_token'); 
+    } catch (_) {}
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
     }
   }
 
@@ -44,11 +48,14 @@ export async function apiFetch(path, options = {}) {
 }
 
 export function setToken(token) {
-  try { localStorage.setItem('auth_token', token); } catch (_) {}
+  try { localStorage.setItem('token', token); } catch (_) {}
 }
 
 export function clearToken() {
-  try { localStorage.removeItem('auth_token'); } catch (_) {}
+  try { 
+    localStorage.removeItem('token'); 
+    localStorage.removeItem('auth_token'); 
+  } catch (_) {}
 }
 
 export function isAuthenticated() {

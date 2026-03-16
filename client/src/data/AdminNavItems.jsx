@@ -1,18 +1,26 @@
-// --------------------------------------------importing all the icons for the sidebar------------------------------
+import {
+    LayoutDashboard, Warehouse, Package, Users, Truck, PackageCheck, ShoppingCart,
+    CreditCard, FileText, Settings, LogOut, IndianRupee
+} from 'lucide-react';
+import React from 'react';
 
-import dashboard from '../assets/icons/DashboardIcon.svg' //use this as products symnbol also
-import dealers from '../assets/icons/DealersIcon.svg'
-import payments from '../assets/icons/PaymentsIcon.svg'
+export const AdminNavitems = [
+    // MENU section
+    { section: 'MENU' },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'Inventory', icon: Warehouse, path: '/admin/inventory' },
+    { label: 'Products', icon: Package, path: '/admin/products' },
+    { label: 'Dealers', icon: Users, path: '/admin/dealers' },
+    { label: 'Suppliers', icon: Truck, path: '/admin/suppliers' },
+    { label: 'Purchases', icon: PackageCheck, path: '/admin/purchases' },
+    { label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
+    { label: 'Payments', icon: CreditCard, path: '/admin/payments' },
+    { label: 'Billing', icon: FileText, path: '/admin/billing' },
+    { label: 'Profit & Loss', icon: IndianRupee, path: '/admin/profit' },
 
-import React from 'react'
+    // OTHER section
+    { section: 'OTHER' },
+    { label: 'Settings', icon: Settings, path: '/admin/settings' },
+    { label: 'Logout', icon: LogOut, path: '/login', isLogout: true },
+];
 
-export const AdminNavitems=[
-    {label: 'Dashboard' ,icon : dashboard , path:'/admin/dashboard'},
-    {label: 'Inventory' ,icon : payments , path:'/admin/inventory'},    
-    {label: 'Products' ,icon : dashboard , path:'/admin/products'},    
-    // Catalogue removed - using PDF catalogue instead    
-    {label: 'Dealers' ,icon : dealers , path:'/admin/dealers'},    
-    {label: 'Orders' ,icon : payments , path:'/admin/orders'},    
-    {label: 'Payments' ,icon :payments , path:'/admin/payments'},
-    {label: 'Billing' ,icon : dashboard , path:'/admin/billing'}    
-]

@@ -2,31 +2,31 @@ import React from "react";
 
 export function Table({ columns = [], data = [], keyField, emptyMessage = "No records found" }) {
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden">
+    <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
+          <thead>
+            <tr className="border-b border-[#2A2A2A]">
               {columns.map((col) => (
                 <th key={col.key}
-                    className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
                   {col.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-[#2A2A2A]">
             {data.length === 0 && (
               <tr>
-                <td className="px-6 py-10 text-center text-gray-500" colSpan={columns.length}>
+                <td className="px-6 py-10 text-center text-zinc-600" colSpan={columns.length}>
                   {emptyMessage}
                 </td>
               </tr>
             )}
             {data.map((row, index) => (
-              <tr key={keyField ? row[keyField] : index} className="hover:bg-gray-50">
+              <tr key={keyField ? row[keyField] : index} className="hover:bg-white/[0.02]">
                 {columns.map((col) => (
-                  <td key={col.key} className="px-6 py-4">
+                  <td key={col.key} className="px-6 py-3 text-sm text-zinc-300">
                     {col.render ? col.render(row) : row[col.key]}
                   </td>
                 ))}
@@ -38,5 +38,3 @@ export function Table({ columns = [], data = [], keyField, emptyMessage = "No re
     </div>
   );
 }
-
-

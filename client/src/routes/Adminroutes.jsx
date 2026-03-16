@@ -9,8 +9,12 @@ import Dealers from "../pages/Dealers.jsx";
 import Orders from "../pages/Orders.jsx";
 import Payments from "../pages/Payments.jsx";
 import Billing from "../pages/Billing.jsx";
+import SuppliersPage from "../pages/SuppliersPage.jsx";
+import PurchasesPage from "../pages/PurchasesPage.jsx";
+import SettingsPage from "../pages/SettingsPage.jsx";
+import ProfitPage from "../pages/ProfitPage.jsx";
 import React from "react";
-
+import LandingPage from "../pages/LandingPage.jsx";
 import { isAuthenticated } from "../apiClient";
 
 function ProtectedRoute({ children }) {
@@ -23,7 +27,7 @@ function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated()) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/login" replace />;
   }
   return children;
 }
@@ -31,7 +35,7 @@ function ProtectedRoute({ children }) {
 const Adminroutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/" element={<LandingPage />} />
       <Route
         path="/admin"
         element={
@@ -45,11 +49,16 @@ const Adminroutes = () => {
         <Route path="inventory" element={<Inventory />} />
         {/* Catalogue route removed - using PDF catalogue instead */}
         <Route path="dealers" element={<Dealers />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
+        <Route path="purchases" element={<PurchasesPage />} />
         <Route path="orders" element={<Orders />} />
         <Route path="payments" element={<Payments />} />
         <Route path="billing" element={<Billing />} />
+        <Route path="profit" element={<ProfitPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
-      <Route path="/auth/login" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/auth/login" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

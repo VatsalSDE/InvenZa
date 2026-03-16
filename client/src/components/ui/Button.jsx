@@ -24,7 +24,7 @@ export default function Button({
 }) {
   const classes = `${variantToClasses[variant] || variantToClasses.primary} ${
     sizeToClasses[size] || sizeToClasses.md
-  } rounded-2xl transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${className}`;
+  } rounded-2xl transition-all duration-100 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 active:brightness-90 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-black ${className}`;
 
   return (
     <button className={classes} disabled={disabled} {...rest}>

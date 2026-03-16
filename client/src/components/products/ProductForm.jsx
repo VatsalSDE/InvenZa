@@ -50,11 +50,8 @@ export default function ProductForm({
               formErrors.category ? 'border-red-300' : 'border-gray-200'
             }`}
           >
+            <option value="glass">Glass</option>
             <option value="steel">Steel</option>
-            <option value="aluminum">Aluminum</option>
-            <option value="brass">Brass</option>
-            <option value="copper">Copper</option>
-            <option value="cast_iron">Cast Iron</option>
           </select>
           {formErrors.category && (
             <p className="text-red-500 text-sm mt-1">{formErrors.category}</p>

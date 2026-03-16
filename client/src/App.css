@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Mina:wght@400;700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @layer utilities {
@@ -13,344 +12,77 @@
 }
 
 @theme {
+  /* ======== INVENZA Dark Theme ======== */
 
-    /* ---------------------------------------------------------------- Custom Colors ---------------------------------------------------------------- */
-    
-    --color-primary: #3221A1;
-    --color-secondary: #00DCF0;
-    --color-tertiary: #2464E4;
-    --color-black: #232323;
-    --color-gray: #F5F5F5;
-    --color-lightGreen: #EDFFF1;
-    --color-green: #106F26;
-    --color-white: #FFFFFF;
-    --color-gray-700: #666666;
-    --color-red-500: #EF4444;
-    --color-grey-font: #767676;
-    --color-tabrow: #F3FAFF;
-    --color-red: #FF0000;
-    --color-grey: #808080;
-    --color-blue: #2464E4;
-    --color-graypagination: #2C2C2C; 
-    --color-liteblue: #ECF7FE;
-    --color-litegreen: #2FA860;
-    --color-bordercolor: #C4C4C4;
-    --color-reddot: #FF8986;
-    --color-litegray: #C4C4C4;
-    --color-purple: #800080;
-    --color-hoverblue: #CCECFE;
-    --color-dgrey: #5E5E5E;
-    --color-reddot: #FF5F00;
-    --color-litegreendot: #BCE372;
-    --color-greendot: #2FA860;
-    --color-graydot: #767676;
-    --color-bluedot: #2464E4;
-    --color-orangedot: #FFC700;
-    --color-cardborder: #E0E0E0;
-    --color-midblue:#CCECFE;
-    --color-popborder: #DEDBE1;
-    --color-arrowborder: #456AB3;
-    
-    
+  --color-bg: #0F0F0F;
+  --color-surface: #1A1A1A;
+  --color-surface-elevated: #222222;
+  --color-border: #2A2A2A;
+  --color-border-subtle: #1F1F1F;
+  --color-sidebar: #111111;
 
-    /* ---------------------------------------------------------------- Custom Font Sizes ---------------------------------------------------------------- */
+  --color-accent: #22C55E;
+  --color-accent-hover: #16A34A;
 
-    --text-xxs: 8px;
-    --text-xs: 12px;
-    --text-s: 13px;
-    --text-sm: 14px;
-    --text-base: 16px;
-    --text-lg: 18px;
-    --text-xl: 20px;
-    --text-2xl: 24px;
-    --text-3xl: 30px;
-    --text-40: 40px;
-    --font-size-header: 32px;
-    --text-4xl: 36px;
-    --text-5xl: 48px;
-    --text-6xl: 60px;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A1A1AA;
+  --color-text-muted: #52525B;
 
+  --color-success: #22C55E;
+  --color-warning: #F97316;
+  --color-danger: #EF4444;
+  --color-info: #3B82F6;
+  --color-neutral: #71717A;
 
-    /* ---------------------------------------------------------------- Custom Font Families ---------------------------------------------------------------- */
+  /* Legacy compat */
+  --color-primary: #22C55E;
+  --color-secondary: #16A34A;
+  --color-white: #FFFFFF;
+  --color-black: #0F0F0F;
 
-    --font-Montserrat: Montserrat;
-    --font-Lato: Lato;
+  /* Font */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-    /* ---------------------------------------------------------------- Custom Font Weights ---------------------------------------------------------------- */
+  /* Font sizes */
+  --text-xxs: 10px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
 
-    --font-weight-light: 300;
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-ml: 600;
-    --font-weight-bold: 700;
-    --font-weight-extrabold: 800;
-    --font-weight-black: 900;
-    --font-weight-semibold: 600;
-
-    /* ---------------------------------------------------------------- Gaps ---------------------------------------------------------------- */
-
-    --gap-16: 16px;
-    --gap-12: 12px;
-    --gap-normal: 20px;
-    --gap-5: 5px;
-    --gap-22px: 22px;
-    --gap-large: 36px;
-    --gap-40px: 40px;
-    --gap-50px: 50px;
-    --gap-32: 32px;
-
-    /* ---------------------------------------------------------Custom Border Radius Values--------------------------------------------------------- */
-    --rounded-s: 5px;
-
-    
-    --breakpoint-mobile:0px;
-    --breakpoint-320: 320px;
-    --breakpoint-375:375px;
-    --breakpoint-425:425px;
-    --breakpoint-tablet:640px;
-    --breakpoint-700: 700px;
-    --breakpoint-742: 742px;
-    --breakpoint-875:875px;
-    --breakpoint-878:878px;
-    --breakpoint-laptop:1024px;
-    --breakpoint-1275:1275px;
-    --breakpoint-1050:1050px;
-    --breakpoint-desktop:1280px;
-    --breakpoint-lgscreen: 1920px;
-    --breakpoint-426:426px;
-    --breakpoint-400:400px;
-    --breakpoint-410:410px;
-    --breakpoint-440:440px;
-    --breakpoint-500:500px;
-    --breakpoint-550:550px;
-    --breakpoint-475:475px;
-    --breakpoint-668:668px;
-    --breakpoint-720:720px;
-    --breakpoint-1188:1188px;
-    --breakpoint-1025: 1025px;
-    --breakpoint-1200:1200px;
-    --breakpoint-1320: 1320px;
-    --breakpoint-1390: 1390px;
-    --breakpoint-1408: 1408px;
-    --breakpoint-1445: 1445px;
-    --breakpoint-1462: 1462px;
-    --breakpoint-1150: 1150px;
-    --breakpoint-1370: 1370px;
-    --breakpoint-1450: 1450px;
-    --breakpoint-1500:1500px;
-    --breakpoint-1732:1732px;
-    --breakpoint-1740: 1740px;
-    --breakpoint-2560:2560px;
-    --breakpoint-1396:1396px;
-    --breakpoint-426:426px;
-    --breakpoint-1800:1800px;
-    --breakpoint-1700:1700px;
-    --breakpoint-1200:1200px;
-    --breakpoint-1250: 1250px;
-    --breakpoint-1562: 1562px;
-    --breakpoint-1500: 1500px;
-    --breakpoint-1690: 1690px;
-    --breakpoint-1864: 1864px;
-    --breakpoint--1700: 1700px;
-    --breakpoint-1920: 1920px;
-    --breakpoint-1400: 1400px;
-    --breakpoint-1100: 1100px;
-    --breakpoint-1585: 1585px;
-    --breakpoint-1200: 1200px;
-    --breakpoint-1150: 1150px;
-    --breakpoint-428: 428px;
-    --breakpoint-1600: 1600px;
-    --breakpoint-1616: 1616px;
-    --breakpoint-1637: 1637px;
-    --breakpoint-1333: 1333px;
-    --breakpoint-1255: 1255px;
-    --breakpoint-1100: 1100px;
-    --breakpoint-1463: 1463px;
-    --breakpoint-1047: 1047px;
-    --breakpoint-1750: 1750px;
-    --breakpoint-1650: 1650px;
-    --breakpoint-1550: 1550px;
-    --breakpoint-1350: 1350px;
-    --breakpoint-1130: 1130px;    
-    --breakpoint-1088: 1088px;
-    --breakpoint-1350: 1350px;
-    --breakpoint-830: 830px;
-    --breakpoint-1782:1782px;
-    --breakpoint-2150: 2150px;
-    --breakpoint-2250: 2250px;
-    --breakpoint-2350: 2350px;
-    --breakpoint-2450: 2450px;
-    --breakpoint-2560: 2560px;
-    --breakpoint-800: 800px;
-    --breakpoint-768:768px;
-    --breakpoint-300:300px;
-    --breakpoint-1836: 1836px;
-    --breakpoint-1000: 1000px;
-    --breakpoint-950: 950px;
-    --breakpoint-878: 878px;
-    --breakpoint-1850:1850;
-    --breakpoint-900: 900px;
-    
-    /*-----------------------------------------------------------------Pagination-------------------------------------------------------------------------------------*/
-
-    --gap-20: 20px;
-
-
-
-}
-.clip-chevron {
-    clip-path: polygon(0 0, 100% 50%, 0 100%);
+  /* Breakpoints */
+  --breakpoint-mobile: 0px;
+  --breakpoint-tablet: 640px;
+  --breakpoint-laptop: 1024px;
+  --breakpoint-desktop: 1280px;
 }
 
-.arrow-pointer-first-three {
-    margin-left: auto;
-    /* width: 493px; */
-    width: min(30vw, 493px);
-    background-color: #456AB3;
-    border: 1px solid #456AB3;
-    padding: 4px;
-    position: relative;
-    min-height: 50px;
-    border-radius: 5px;
+/* Dark scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2A2A2A #0F0F0F;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: #0F0F0F;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2A2A2A;
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3A3A3A;
 }
 
-.afterElementFive:after {
-    border-radius: 3px;
-    content: '';
-    display: block;
-    position: absolute;
-    /* top: 0px;
-    left: 489px; */
-    margin-left: -3px;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 26px 0 31px 17px;
-    border-color: transparent transparent transparent #456AB3;
-    filter: drop-shadow(1px 0 0 #456AB3) drop-shadow(0 .5px 0 #456AB3);
-}
-
-.tabLayout {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px;
-    padding: 40px 24px 0px 24px;
-}
-
-.backAndDeleteButton {
-    margin-top: 48px;
-    margin-left: 17px;
-    margin-bottom: 135px;
-}
-
-.arrow-pointer-second-three {
-    margin-left: 15px;
-    /* width: 493px; */
-    width: min(30vw, 493px);
-    border-right: 1px solid #456AB3;
-    border-top: 1px solid #456AB3;
-    border-bottom: 1px solid #456AB3;
-    padding: 4px;
-    background-color: #456AB3;
-    position: relative;
-    min-height: 50px;
-    border-radius: 5px;
-}
-
-.arrow-pointer-second-three:before {
-    border-radius: 3px;
-    content: '';
-    display: block;
-    position: absolute;
-    top: 0px;
-    width: 0;
-    left: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 27px 0 28px 14px;
-    border-color: transparent transparent transparent white;
-    filter: drop-shadow(1px 0 0 #456AB3) drop-shadow(0 .5px 0 #456AB3);
-}
-
-.PrimaryTextSecondThree {
-    color: white;
-    font-family: Montserrat;
-    font-size: 14px;
-    font-weight: 500;
-    margin-left: 24px;
-    margin-top: 3px;
-}
-
-.afterElementSix:after {
-    border-radius: 3px;
-    content: '';
-    display: block;
-    position: absolute;
-    /* top: 0px;
-    left: 490px; */
-    margin-left: -3px;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 26px 0 31px 17px;
-    border-color: transparent transparent transparent #456AB3;
-    filter: drop-shadow(1px 0 0 #456AB3) drop-shadow(0 .5px 0 #456AB3);
-}
-
-.arrow-pointer-second-three {
-    margin-left: 15px;
-    /* width: 493px; */
-    width: min(30vw, 493px);
-    border-right: 1px solid #456AB3;
-    border-top: 1px solid #456AB3;
-    border-bottom: 1px solid #456AB3;
-    padding: 4px;
-    background-color: #456AB3;
-    position: relative;
-    min-height: 50px;
-    border-radius: 5px;
-}
-
-.arrow-pointer-third-three {
-    margin-left: 15px;
-    margin-right: auto;
-    /* width: 493px; */
-    width: min(30vw, 493px);
-    border-right: 1px solid #456AB3;
-    border-top: 1px solid #456AB3;
-    border-bottom: 1px solid #456AB3;
-    background-color: #CCECFE;
-    padding: 4px;
-    position: relative;
-    min-height: 50px;
-    border-radius: 5px;
-    box-shadow: 0px 1px 2px rgba(55, 65, 81, 0.08);
-}
-
-.arrow-pointer-third-three:before {
-    border-radius: 3px;
-    content: '';
-    display: block;
-    position: absolute;
-    top: 0px;
-    width: 0;
-    left: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 28px 0 26px 16px;
-    border-color: transparent transparent transparent white;
-    filter: drop-shadow(1px 0 0 #456AB3) drop-shadow(0 .5px 0 #456AB3);
-}
-
-.graphImage {
-    width: 100%;
-    max-width: 500px;
-    margin: 20px auto;
-}
-
-.topTextReceived label {
-    display: block;
-    text-align: center;
-    font-weight: bold;
-    margin: 15px 0 10px;
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #0F0F0F;
+  color: #FFFFFF;
 }

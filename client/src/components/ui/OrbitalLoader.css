@@ -1,0 +1,81 @@
+/* OrbitalLoader — INVENZA branded spinner */
+.orbital-loader {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+}
+
+.orbital-loader--col {
+    flex-direction: column;
+}
+
+.orbital-loader--col-reverse {
+    flex-direction: column-reverse;
+}
+
+.orbital-loader--row {
+    flex-direction: row;
+}
+
+.orbital-loader--row-reverse {
+    flex-direction: row-reverse;
+}
+
+.orbital-spinner {
+    position: relative;
+}
+
+.orbital-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid transparent;
+}
+
+/* Outer ring — green */
+.orbital-ring--outer {
+    inset: 0;
+    border-top-color: #22C55E;
+    animation: orbital-spin 1s linear infinite;
+}
+
+/* Middle ring — emerald, reverse */
+.orbital-ring--middle {
+    inset: 8px;
+    border-top-color: #10B981;
+    animation: orbital-spin-reverse 1.5s linear infinite;
+}
+
+/* Inner ring — lime, fast */
+.orbital-ring--inner {
+    inset: 16px;
+    border-top-color: #4ADE80;
+    animation: orbital-spin 0.8s linear infinite;
+}
+
+.orbital-message {
+    color: #a1a1aa;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+@keyframes orbital-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes orbital-spin-reverse {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(-360deg);
+    }
+}

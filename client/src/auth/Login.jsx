@@ -1,109 +1,98 @@
 import React, { useState } from 'react';
-import loginImage from '../assets/images/login-image.jpg'
-import logo from '../assets/images/logo.png'
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch, setToken } from '../apiClient';
+import { authAPI } from '../services/api';
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
-
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     async function handleSubmit(e) {
         e.preventDefault();
         setError('');
+        setLoading(true);
         try {
-            const data = await apiFetch('/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ username, password })
-            });
+            const data = await authAPI.login({ username, password });
             if (data?.token) {
-                setToken(data.token);
+                localStorage.setItem('token', data.token);
                 navigate('/admin/dashboard');
             } else {
                 setError('Login failed');
             }
         } catch (err) {
-            setError('Invalid credentials');
+            setError(err.response?.data?.message || 'Invalid credentials');
+        } finally {
+            setLoading(false);
         }
     }
 
-    {/*---------------- Left Image Section--------------- */ }
     return (
-        <div className="min-h-screen flex flex-col md:flex-row">
-            <div className="md:w-[55%] w-full h-[100vh]">
-                <img
-                    src={loginImage}
-                    alt="Login Visual"
-                    className="w-full h-full object-cover animate-float"
-                />
-            </div>
-
-            {/* ----------------Right Login Form Section --------------------*/}
-            <div className="md:w-[45%] w-full flex items-center justify-center p-8 bg-blue-50">
-                <div className="w-full max-w-md">
-                    {/* ----------Logo---------------- */}
-                    <div className="mb-6 text-center">
-                        <img
-                            src={logo}
-                            alt="Invenza Admin Logo"
-                            className="mx-auto h-24 w-[95%] object-contain"
-                        />
+        <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center p-4">
+            <div className="w-full max-w-sm">
+                {/* Logo */}
+                <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-2xl p-8">
+                    <div className="text-center mb-6">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">INVENZA</h1>
+                        <p className="text-xs text-zinc-600 mt-1">Vinayak Lakshmi Gas Stoves</p>
                     </div>
 
+                    <div className="border-t border-[#2A2A2A] pt-6 mb-6">
+                        <h2 className="text-lg font-semibold text-white text-center">Welcome back</h2>
+                        <p className="text-xs text-zinc-500 text-center mt-1">Sign in to your dashboard</p>
+                    </div>
 
-                    {/* Login Form */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block mb-1 text-sm font-medium text-gray-700">Username</label>
+                            <label className="block mb-1.5 text-xs font-medium text-zinc-500">Username</label>
                             <input
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 placeholder="Enter username"
-                                className="w-full px-5 py-3 border border-gray-300 rounded-lg text-base font-semibold text-gray-800 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2.5 bg-[#222222] border border-[#2A2A2A] text-white text-sm rounded-lg focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/30 placeholder:text-zinc-600"
                                 required
                             />
-
                         </div>
 
                         <div>
-                            <label className="block mb-1 text-sm font-medium text-gray-700">Password</label>
+                            <label className="block mb-1.5 text-xs font-medium text-zinc-500">Password</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-5 py-3 border border-gray-300 rounded-lg text-base font-semibold text-gray-800 placeholder-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
                                     placeholder="Enter password"
+                                    className="w-full px-3 py-2.5 bg-[#222222] border border-[#2A2A2A] text-white text-sm rounded-lg focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/30 placeholder:text-zinc-600 pr-10"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-blue-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
                                 >
-                                    {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                 </button>
                             </div>
-
                         </div>
 
-                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                        {error && (
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                                <p className="text-red-400 text-xs">{error}</p>
+                            </div>
+                        )}
 
-                        <button
-                            type="submit"
-                            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold text-base shadow-md hover:bg-blue-700 hover:scale-[1.02] transition-all duration-300 ease-in-out"
-                        >
-                            Let's Go
+                        <button type="submit" disabled={loading}
+                            className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-black font-semibold py-2.5 rounded-lg text-sm transition-colors">
+                            {loading ? 'Signing in...' : 'Sign In'}
                         </button>
-
                     </form>
                 </div>
+
+                <p className="text-center text-[10px] text-zinc-700 mt-4">© 2026 INVENZA — Vinayak Lakshmi Gas Stoves</p>
             </div>
         </div>
     );
