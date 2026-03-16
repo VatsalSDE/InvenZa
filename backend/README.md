@@ -1,10 +1,10 @@
-# Inventory Management System - Backend
+# INVENZA Backend
 
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- PostgreSQL database (can be remote)
+- Node.js (v18 or higher)
+- Supabase account with a project
 - npm or yarn
 
 ### 1. Install Dependencies
@@ -13,22 +13,12 @@ npm install
 ```
 
 ### 2. Environment Configuration
-Create a `.env` file in the backend root directory:
+Create a `.env` file by copying `.env.example`:
 
 ```env
-# Database Configuration (Supabase or any managed Postgres)
-# Recommended: use a single connection URL (includes SSL)
-# Supabase example (found under Project Settings → Database → Connection string):
-# postgres://USER:PASSWORD@HOST:6543/DBNAME?sslmode=require
-DATABASE_URL=postgres://...your_supabase_connection_string...
-
-# Optional: fallback individual fields (used only if DATABASE_URL is empty)
-# PGHOST=YOUR_DB_HOST
-# PGPORT=5432
-# PGDATABASE=storedb
-# PGUSER=postgres
-# PGPASSWORD=YOUR_DB_PASSWORD
-# PGSSLMODE=require
+# Supabase Configuration (Required)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 
 # Server Configuration
 PORT=4000
@@ -36,141 +26,261 @@ NODE_ENV=development
 
 # JWT Configuration
 JWT_SECRET=your_super_secret_jwt_key_here
-JWT_EXPIRES_IN=24h
+JWT_EXPIRES_IN=7d
 
 # CORS Configuration
 CORS_ORIGIN=http://localhost:5173
 
-# Admin Password for seeding
-ADMIN_PASSWORD=admin123
+# Cloudinary Configuration (for image uploads)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Email Configuration (for billing emails)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+EMAIL_FROM=your_email@gmail.com
 ```
 
-### 3. Database Setup
+### 3. Database Setup (Supabase)
 
-#### Option A: Remote Database (Your Current Setup)
-1. Ensure your PostgreSQL server allows remote connections
-2. Update `pg_hba.conf` to allow connections from your development machine
-3. Configure firewall rules to allow port 5432
-4. Use the IP address of your database server in `PGHOST`
+1. Go to your Supabase project's SQL Editor
+2. Run the schema files in order:
+   - `src/db/sql/schema.sql` - Core tables
+   - `src/db/sql/billing_schema.sql` - Billing tables
+   - `src/db/sql/suppliers_purchases_schema.sql` - Suppliers & Purchases tables
 
-#### Option B: Local Database
-1. Install PostgreSQL locally
-2. Create database: `CREATE DATABASE storedb;`
-3. Set `PGHOST=localhost` in `.env`
-
-### 4. Run Database Migrations
-```bash
-npm run migrate
-```
-
-### 5. Seed Initial Data
+### 4. Seed Initial Data
 ```bash
 npm run seed
 ```
-This creates an admin user with credentials: `admin` / `admin123`
+Creates an admin user with credentials: `admin` / `admin123`
 
-### 6. Start Development Server
+### 5. Start Development Server
 ```bash
 npm run dev
 ```
 
-The server will start on `http://localhost:4000`
+Server starts on `http://localhost:4000`
 
-## 📁 Project Structure
-
+## 📁 Project Structure (Routes/Controllers/Services)
 ```
 backend/
 ├── src/
-│   ├── db/
-│   │   ├── pool.js          # Database connection
-│   │   ├── migrate.js       # Database schema setup
-│   │   ├── seed.js          # Initial data seeding
-│   │   └── sql/
-│   │       └── schema.sql   # Database schema
+│   ├── config/
+│   │   ├── supabase.js       # Supabase client initialization
+│   │   └── cloudinary.js     # Cloudinary configuration
+│   ├── controllers/          # Request handlers
+│   │   ├── auth.controller.js
+│   │   ├── products.controller.js
+│   │   ├── dealers.controller.js
+│   │   ├── orders.controller.js
+│   │   ├── payments.controller.js
+│   │   ├── billing.controller.js
+│   │   ├── suppliers.controller.js
+│   │   ├── purchases.controller.js
+│   │   └── dashboard.controller.js
+│   ├── services/             # Business logic & Supabase queries
+│   │   ├── auth.service.js
+│   │   ├── products.service.js
+│   │   ├── dealers.service.js
+│   │   ├── orders.service.js
+│   │   ├── payments.service.js
+│   │   ├── billing.service.js
+│   │   ├── suppliers.service.js
+│   │   ├── purchases.service.js
+│   │   └── dashboard.service.js
+│   ├── routes/               # API route definitions
+│   │   ├── index.routes.js   # Main router
+│   │   ├── auth.routes.js
+│   │   ├── products.routes.js
+│   │   ├── dealers.routes.js
+│   │   ├── orders.routes.js
+│   │   ├── payments.routes.js
+│   │   ├── billing.routes.js
+│   │   ├── suppliers.routes.js
+│   │   ├── purchases.routes.js
+│   │   └── dashboard.routes.js
 │   ├── middleware/
-│   │   └── auth.js          # JWT authentication
-│   ├── routes/
-│   │   ├── auth.js          # Login/logout
-│   │   ├── products.js      # Product CRUD
-│   │   ├── dealers.js       # Dealer CRUD
-│   │   ├── orders.js        # Order management
-│   │   └── payments.js      # Payment tracking
-│   └── server.js            # Express server
+│   │   ├── auth.middleware.js    # JWT verification
+│   │   ├── upload.middleware.js  # Multer for images
+│   │   └── error.middleware.js   # Global error handler
+│   ├── utils/
+│   │   ├── codeGenerator.js      # Auto-generate codes (ORD-, PAY-, PO-, etc.)
+│   │   └── responseHelper.js     # Standardized API responses
+│   ├── db/
+│   │   ├── seed.js               # Database seeding
+│   │   └── sql/                  # SQL schema files
+│   └── server.js                 # Express server entry point
 ├── package.json
-└── .env
+├── .env.example
+└── README.md
 ```
 
 ## 🔌 API Endpoints
 
 ### Authentication
-- `POST /api/auth/login` - User login
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | User login |
+| POST | `/api/auth/logout` | User logout |
 
 ### Products
-- `GET /api/products` - Get all products
-- `POST /api/products` - Create product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/products` | Get all products |
+| GET | `/api/products/:id` | Get product by ID |
+| POST | `/api/products` | Create product (with image) |
+| PUT | `/api/products/:id` | Update product |
+| DELETE | `/api/products/:id` | Delete product |
 
 ### Dealers
-- `GET /api/dealers` - Get all dealers
-- `POST /api/dealers` - Create dealer
-- `PUT /api/dealers/:id` - Update dealer
-- `DELETE /api/dealers/:id` - Delete dealer
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/dealers` | Get all dealers |
+| GET | `/api/dealers/outstanding-balances` | Get dealer balances |
+| GET | `/api/dealers/:id` | Get dealer by ID |
+| POST | `/api/dealers` | Create dealer |
+| PUT | `/api/dealers/:id` | Update dealer |
+| DELETE | `/api/dealers/:id` | Delete dealer |
 
 ### Orders
-- `GET /api/orders` - Get all orders
-- `POST /api/orders` - Create order with items
-- `GET /api/orders/:id/items` - Get order items
-- `PUT /api/orders/:id/status` - Update order status
-- `DELETE /api/orders/:id` - Delete order
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/orders` | Get all orders |
+| GET | `/api/orders/:id` | Get order by ID |
+| GET | `/api/orders/:id/items` | Get order items |
+| POST | `/api/orders` | Create order (deducts stock) |
+| PUT | `/api/orders/:id/status` | Update order status |
+| DELETE | `/api/orders/:id` | Delete order (restores stock) |
 
 ### Payments
-- `GET /api/payments` - Get all payments
-- `POST /api/payments` - Create payment
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/payments` | Get all payments |
+| GET | `/api/payments/:id` | Get payment by ID |
+| POST | `/api/payments` | Create payment |
+| DELETE | `/api/payments/:id` | Delete payment |
+
+### Suppliers
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/suppliers` | Get active suppliers |
+| GET | `/api/suppliers/all` | Get all suppliers |
+| GET | `/api/suppliers/archived` | Get archived suppliers |
+| GET | `/api/suppliers/:id` | Get supplier by ID |
+| POST | `/api/suppliers` | Create supplier |
+| PUT | `/api/suppliers/:id` | Update supplier |
+| DELETE | `/api/suppliers/:id` | Soft delete (archive) |
+| POST | `/api/suppliers/:id/restore` | Restore archived supplier |
+
+### Purchases
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/purchases` | Get all purchases |
+| GET | `/api/purchases/:id` | Get purchase by ID |
+| GET | `/api/purchases/:id/items` | Get purchase items |
+| POST | `/api/purchases` | Create purchase order |
+| PUT | `/api/purchases/:id/status` | Update status (increases stock on Received) |
+| DELETE | `/api/purchases/:id` | Delete purchase |
+
+### Billing
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/billing/bills` | Get all bills |
+| GET | `/api/billing/bills/:id` | Get bill by ID |
+| POST | `/api/billing/bills` | Create bill |
+| POST | `/api/billing/bills/:id/send-email` | Email bill to dealer |
+| GET | `/api/billing/settings` | Get billing settings |
+| PUT | `/api/billing/settings` | Update billing settings |
+
+### Dashboard
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/dashboard/stats` | Get dashboard statistics |
 
 ## 🔒 Authentication
 
-All protected endpoints require a JWT token in the Authorization header:
+All protected endpoints require a JWT token:
 ```
 Authorization: Bearer <your-jwt-token>
 ```
 
+Demo mode: Use `demo_mode=true` in request body for development.
+
 ## 🗄️ Database Schema
 
-The system includes tables for:
+### Core Tables
 - **login** - User authentication
-- **products** - Inventory items
+- **products** - Inventory items with stock tracking
 - **dealers** - Customer information
-- **orders** - Order management
+- **orders** - Sales orders
 - **order_items** - Order line items
-- **payments** - Payment tracking
+- **payments** - Payment records
+
+### Billing Tables
+- **bills** - Generated invoices
+- **bill_settings** - Company billing configuration
+
+### Procurement Tables
+- **suppliers** - Supplier management (soft delete supported)
+- **purchases** - Purchase orders
+- **purchase_items** - Purchase line items
+
+## 📊 Business Logic
+
+### Stock Management
+- **Order Creation**: Automatically deducts product quantities
+- **Order Deletion**: Restores product quantities
+- **Purchase Received**: Increases product quantities when status = 'Received'
+
+### Code Generation
+All entity codes are auto-generated:
+- Orders: `ORD-YYMMDD-XXX`
+- Payments: `PAY-YYMMDD-XXX`
+- Purchases: `PO-YYMMDD-XXX`
+- Suppliers: `SUP-XXX`
+- Dealers: `DLR-XXX`
+
+### Outstanding Balances
+Calculated as: `SUM(order amounts) - SUM(payment amounts)` per dealer
 
 ## 🚨 Troubleshooting
 
-### Connection Issues
-1. Verify your Supabase project is up (check Status page)
-2. Use the exact connection string from Supabase ("sslmode=require")
-3. Ensure `DATABASE_URL` is set in `backend/.env` and server restarted
-4. If using individual fields instead of `DATABASE_URL`, set `PGSSLMODE=require`
-5. Confirm your IP is allowed if you use the direct host/port option
-
-### Supabase Setup Quick Steps
-1. In Supabase, go to Project Settings → Database → Connection pooling or Connection string
-2. Copy the `URI` for Node.js (or psql). It often looks like:
-   `postgres://USER:PASSWORD@HOST:6543/DBNAME?sslmode=require`
-3. Set it as `DATABASE_URL` in `backend/.env`
-4. Run migrations if needed using your schema files or Supabase SQL editor
-5. Start the backend. `pool.js` auto-enables SSL and supports `DATABASE_URL`
+### Supabase Connection
+1. Verify `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env`
+2. Check Supabase project is active
+3. Ensure tables exist (run SQL schemas)
 
 ### Common Errors
-- `ECONNREFUSED`: Database server not accessible
-- `password authentication failed`: Wrong credentials
-- `relation does not exist`: Run migrations first
+- `Invalid API key`: Wrong `SUPABASE_ANON_KEY`
+- `relation does not exist`: Run SQL schema files
+- `JWT expired`: Token validity exceeded, re-login
 
 ## 📝 Development Notes
 
-- The backend uses ES modules (`import/export`)
-- Database queries use parameterized statements for security
-- JWT tokens expire after 24 hours by default
-- CORS is configured to allow frontend connections
-- All database operations are wrapped in try-catch blocks
+- Uses ES modules (`import/export`)
+- All services export functions for AI integration
+- Standardized API responses via `responseHelper.js`
+- Global error handling with `asyncHandler` wrapper
+- JWT tokens expire after 7 days by default
+- CORS configured for frontend at `localhost:5173`
+
+## 🚀 Deployment
+
+### Railway/Render
+1. Push code to GitHub
+2. Connect repository to Railway/Render
+3. Set environment variables
+4. Deploy automatically
+
+### Environment Variables for Production
+```env
+NODE_ENV=production
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+JWT_SECRET=strong-production-secret
+CORS_ORIGIN=https://your-frontend-domain.vercel.app
+```
